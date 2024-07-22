@@ -2,7 +2,7 @@
 
 [![mpv](https://img.shields.io/badge/mpv-v0.38.0-blue.svg)](https://github.com/mpv-player/mpv)
 [![ffmpeg](https://img.shields.io/badge/ffmpeg-n7.0.1-blue.svg)](https://github.com/FFmpeg/FFmpeg)
-[![license](https://img.shields.io/github/license/mpvkit/MPVKit)](https://github.com/mpvkit/MPVKit/main/LICENSE)
+[![license](https://img.shields.io/github/license/mpvkit/MPVKit)](https://github.com/endpne/MPVKit/main/LICENSE)
 
 > MPVKit is only suitable for learning `libmpv` and will not be maintained too frequently.
 
@@ -21,7 +21,7 @@ Metal support only a patch version ([#7857](https://github.com/mpv-player/mpv/pu
 ### Swift Package Manager
 
 ```
-https://github.com/mpvkit/MPVKit.git
+https://github.com/endpne/MPVKit.git
 ```
 
 ### Choose which version
