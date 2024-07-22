@@ -2,7 +2,7 @@
 
 [![mpv](https://img.shields.io/badge/mpv-v0.38.0-blue.svg)](https://github.com/mpv-player/mpv)
 [![ffmpeg](https://img.shields.io/badge/ffmpeg-n7.0.1-blue.svg)](https://github.com/FFmpeg/FFmpeg)
-[![license](https://img.shields.io/github/license/mpvkit/MPVKit)](https://github.com/endpne/MPVKit/main/LICENSE)
+[![license](https://img.shields.io/github/license/endpne/MPVKit)](https://github.com/endpne/MPVKit/main/LICENSE)
 
 > MPVKit is only suitable for learning `libmpv` and will not be maintained too frequently.
 
@@ -57,15 +57,15 @@ make help
 
 ## Related Projects
 
-* [moltenvk-build](https://github.com/mpvkit/moltenvk-build)
-* [libplacebo-build](https://github.com/mpvkit/libplacebo-build)
-* [libdovi-build](https://github.com/mpvkit/libdovi-build)
-* [libshaderc-build](https://github.com/mpvkit/libshaderc-build)
-* [libluajit-build](https://github.com/mpvkit/libluajit-build)
-* [libass-build](https://github.com/mpvkit/libass-build)
-* [libsmbclient-build](https://github.com/mpvkit/libsmbclient-build)
-* [gnutls-build](https://github.com/mpvkit/gnutls-build)
-* [openssl-build](https://github.com/mpvkit/openssl-build)
+* [moltenvk-build](https://github.com/endpne/moltenvk-build)
+* [libplacebo-build](https://github.com/endpne/libplacebo-build)
+* [libdovi-build](https://github.com/endpne/libdovi-build)
+* [libshaderc-build](https://github.com/endpne/libshaderc-build)
+* [libluajit-build](https://github.com/endpne/libluajit-build)
+* [libass-build](https://github.com/endpne/libass-build)
+* [libsmbclient-build](https://github.com/endpne/libsmbclient-build)
+* [gnutls-build](https://github.com/endpne/gnutls-build)
+* [openssl-build](https://github.com/endpne/openssl-build)
 
 ## Donation
 

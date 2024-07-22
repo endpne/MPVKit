@@ -10,7 +10,7 @@ struct ContentView: View {
     var body: some View {
         VStack {
             MPVMetalPlayerView(coordinator: coordinator)
-                .play(URL(string: "https://github.com/mpvkit/video-test/raw/master/resources/HDR10_ToneMapping_Test_240_1000_nits.mp4")!)
+                .play(URL(string: "https://github.com/endpne/video-test/raw/master/resources/HDR10_ToneMapping_Test_240_1000_nits.mp4")!)
                 .onPropertyChange{ player, propertyName, propertyData in
                     switch propertyName {
                     case MPVProperty.videoParamsSigPeak:
@@ -40,32 +40,32 @@ struct ContentView: View {
                         Text("h264").frame(maxWidth: .infinity)
                     }
                     Button {
-                        coordinator.play(URL(string: "https://github.com/mpvkit/video-test/raw/master/resources/h265.mp4")!)
+                        coordinator.play(URL(string: "https://github.com/endpne/video-test/raw/master/resources/h265.mp4")!)
                     } label: {
                         Text("h265").frame(maxWidth: .infinity)
                     }
                     Button {
-                        coordinator.play(URL(string: "https://github.com/mpvkit/video-test/raw/master/resources/pgs_subtitle.mkv")!)
+                        coordinator.play(URL(string: "https://github.com/endpne/video-test/raw/master/resources/pgs_subtitle.mkv")!)
                     } label: {
                         Text("subtitle").frame(maxWidth: .infinity)
                     }
                     Button {
-                        coordinator.play(URL(string: "https://github.com/mpvkit/video-test/raw/master/resources/hdr.mkv")!)
+                        coordinator.play(URL(string: "https://github.com/endpne/video-test/raw/master/resources/hdr.mkv")!)
                     } label: {
                         Text("HDR").frame(maxWidth: .infinity)
                     }
                     Button {
-                        coordinator.play(URL(string: "https://github.com/mpvkit/video-test/raw/master/resources/HDR10+.mp4")!)
+                        coordinator.play(URL(string: "https://github.com/endpne/video-test/raw/master/resources/HDR10+.mp4")!)
                     } label: {
                         Text("HDR10+").frame(maxWidth: .infinity)
                     }
                     Button {
-                        coordinator.play(URL(string: "https://github.com/mpvkit/video-test/raw/master/resources/DolbyVision_P5.mp4")!)
+                        coordinator.play(URL(string: "https://github.com/endpne/video-test/raw/master/resources/DolbyVision_P5.mp4")!)
                     } label: {
                         Text("DV_P5").frame(maxWidth: .infinity)
                     }
                     Button {
-                        coordinator.play(URL(string: "https://github.com/mpvkit/video-test/raw/master/resources/DolbyVision_P8.mp4")!)
+                        coordinator.play(URL(string: "https://github.com/endpne/video-test/raw/master/resources/DolbyVision_P8.mp4")!)
                     } label: {
                         Text("DV_P8").frame(maxWidth: .infinity)
                     }
