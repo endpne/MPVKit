@@ -313,9 +313,9 @@ enum Library: String, CaseIterable {
         case .libshaderc:
             return  [
                 .target(
-                    name: "Libshaderc_combined",
-                    url: "https://github.com/mpvkit/libshaderc-build/releases/download/\(self.version)/Libshaderc_combined.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libshaderc-build/releases/download/\(self.version)/Libshaderc_combined.xcframework.checksum.txt"
+                    name: "Libshaderc-combined",
+                    url: "https://github.com/mpvkit/libshaderc-build/releases/download/\(self.version)/Libshaderc-combined.xcframework.zip",
+                    checksum: "https://github.com/mpvkit/libshaderc-build/releases/download/\(self.version)/Libshaderc-combined.xcframework.checksum.txt"
                 ),
             ]
         case .libuchardet:

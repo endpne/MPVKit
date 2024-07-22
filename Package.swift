@@ -33,7 +33,7 @@ let package = Package(
             dependencies: [
                 "Libavcodec", "Libavfilter", "Libavformat", "Libavutil", "Libswresample", "Libswscale",
                 "Libssl", "Libcrypto", "Libass", "Libfreetype", "Libfribidi", "Libharfbuzz",
-                "MoltenVK", "Libshaderc_combined", "lcms2", "Libplacebo", "Libdovi", "Libunibreak",
+                "MoltenVK", "Libshaderc-combined", "lcms2", "Libplacebo", "Libdovi", "Libunibreak",
                 "gmp", "nettle", "hogweed", "gnutls", "Libdav1d"
             ],
             path: "Sources/_FFmpeg",
@@ -70,7 +70,7 @@ let package = Package(
             dependencies: [
                 "Libavcodec-GPL", "Libavfilter-GPL", "Libavformat-GPL", "Libavutil-GPL", "Libswresample-GPL", "Libswscale-GPL",
                 "Libssl", "Libcrypto", "Libass", "Libfreetype", "Libfribidi", "Libharfbuzz",
-                "MoltenVK", "Libshaderc_combined", "lcms2", "Libplacebo", "Libdovi", "Libunibreak",
+                "MoltenVK", "Libshaderc-combined", "lcms2", "Libplacebo", "Libdovi", "Libunibreak",
                 "Libsmbclient", "gmp", "nettle", "hogweed", "gnutls", "Libdav1d"
             ],
             path: "Sources/_FFmpeg-GPL",
@@ -211,8 +211,8 @@ let package = Package(
         ),
 
         .binaryTarget(
-            name: "Libshaderc_combined",
-            url: "https://github.com/mpvkit/libshaderc-build/releases/download/2024.1.0/Libshaderc_combined.xcframework.zip",
+            name: "Libshaderc-combined",
+            url: "https://github.com/mpvkit/libshaderc-build/releases/download/2024.1.0/Libshaderc-combined.xcframework.zip",
             checksum: "f6267f62881e9496608069266ba52b025bcfcd6ec5859d02d780feeabfacc947"
         ),
 
