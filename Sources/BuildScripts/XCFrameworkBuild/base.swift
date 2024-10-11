@@ -740,8 +740,14 @@ class ZipBaseBuild : BaseBuild {
         try! FileManager.default.createDirectory(atPath: directoryURL.path, withIntermediateDirectories: true, attributes: nil)
 
         if !FileManager.default.fileExists(atPath: outputFile.path) {
-            try! Utility.launch(path: "wget", arguments: ["-O", outputFileName, library.url], currentDirectoryURL: directoryURL)
-            try! Utility.launch(path: "/usr/bin/unzip", arguments: ["-o",outputFileName], currentDirectoryURL: directoryURL)
+            do {
+                print("Downloading \(library.rawValue)...")
+                try Utility.launch(path: "wget", arguments: ["-O", outputFileName, library.url], currentDirectoryURL: directoryURL)
+                try Utility.launch(path: "/usr/bin/unzip", arguments: ["-o",outputFileName], currentDirectoryURL: directoryURL)
+            } catch {
+                print("Download \(library.rawValue) failed")
+                throw error
+            }
         }
     }
 
