@@ -8,10 +8,12 @@ let package = Package(
     products: [
         .library(
             name: "MPVKit",
+            type: .static,
             targets: ["_MPVKit"]
         ),
         .library(
             name: "MPVKit-GPL",
+            type: .static,
             targets: ["_MPVKit-GPL"]
         ),
     ],
