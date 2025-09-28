@@ -99,45 +99,45 @@ enum Library: String, CaseIterable {
         case .FFmpeg:
             return "https://github.com/FFmpeg/FFmpeg"
         case .openssl:
-            return "https://github.com/mpvkit/openssl-build/releases/download/\(self.version)/openssl-all.zip"
+            return "https://github.com/endpne/openssl-build/releases/download/\(self.version)/openssl-all.zip"
         case .gnutls:
-            return "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/gnutls-all.zip"
+            return "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/gnutls-all.zip"
         case .nettle:
-            return "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/nettle-all.zip"
+            return "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/nettle-all.zip"
         case .gmp:
-            return "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/gmp-all.zip"
+            return "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/gmp-all.zip"
         case .libass:
-            return "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/libass-all.zip"
+            return "https://github.com/endpne/libass-build/releases/download/\(self.version)/libass-all.zip"
         case .libunibreak:
-            return "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/libunibreak-all.zip"
+            return "https://github.com/endpne/libass-build/releases/download/\(self.version)/libunibreak-all.zip"
         case .libfreetype:
-            return "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/libfreetype-all.zip"
+            return "https://github.com/endpne/libass-build/releases/download/\(self.version)/libfreetype-all.zip"
         case .libfribidi:
-            return "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/libfribidi-all.zip"
+            return "https://github.com/endpne/libass-build/releases/download/\(self.version)/libfribidi-all.zip"
         case .libharfbuzz:
-            return "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/libharfbuzz-all.zip"
+            return "https://github.com/endpne/libass-build/releases/download/\(self.version)/libharfbuzz-all.zip"
         case .libsmbclient:
-            return "https://github.com/mpvkit/libsmbclient-build/releases/download/\(self.version)/libsmbclient-all.zip"
+            return "https://github.com/endpne/libsmbclient-build/releases/download/\(self.version)/libsmbclient-all.zip"
         case .lcms2:
-            return "https://github.com/mpvkit/libplacebo-build/releases/download/\(self.version)/lcms2-all.zip"
+            return "https://github.com/endpne/libplacebo-build/releases/download/\(self.version)/lcms2-all.zip"
         case .libplacebo:
-            return "https://github.com/mpvkit/libplacebo-build/releases/download/\(self.version)/libplacebo-all.zip"
+            return "https://github.com/endpne/libplacebo-build/releases/download/\(self.version)/libplacebo-all.zip"
         case .libdav1d:
-            return "https://github.com/mpvkit/libdav1d-build/releases/download/\(self.version)/libdav1d-all.zip"
+            return "https://github.com/endpne/libdav1d-build/releases/download/\(self.version)/libdav1d-all.zip"
         case .libdovi:
-            return "https://github.com/mpvkit/libdovi-build/releases/download/\(self.version)/libdovi-all.zip"
+            return "https://github.com/endpne/libdovi-build/releases/download/\(self.version)/libdovi-all.zip"
         case .vulkan:
-            return "https://github.com/mpvkit/moltenvk-build/releases/download/\(self.version)/MoltenVK-all.zip"
+            return "https://github.com/endpne/moltenvk-build/releases/download/\(self.version)/MoltenVK-all.zip"
         case .libshaderc:
-            return "https://github.com/mpvkit/libshaderc-build/releases/download/\(self.version)/libshaderc-all.zip"
+            return "https://github.com/endpne/libshaderc-build/releases/download/\(self.version)/libshaderc-all.zip"
         case .libuchardet:
-            return "https://github.com/mpvkit/libuchardet-build/releases/download/\(self.version)/libuchardet-all.zip"
+            return "https://github.com/endpne/libuchardet-build/releases/download/\(self.version)/libuchardet-all.zip"
         case .libbluray:
             return "https://code.videolan.org/videolan/libbluray.git"
         case .libluajit:
-            return "https://github.com/mpvkit/libluajit-build/releases/download/\(self.version)/libluajit-all.zip"
+            return "https://github.com/endpne/libluajit-build/releases/download/\(self.version)/libluajit-all.zip"
         case .libuavs3d:
-            return "https://github.com/mpvkit/libuavs3d-build/releases/download/\(self.version)/libuavs3d-all.zip"
+            return "https://github.com/endpne/libuavs3d-build/releases/download/\(self.version)/libuavs3d-all.zip"
         }
     }
 
@@ -148,7 +148,7 @@ enum Library: String, CaseIterable {
             return [
                 .target(
                     name: "Libmpv",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libmpv.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libmpv.xcframework.zip",
                     checksum: ""
                 ),
             ]
@@ -156,37 +156,37 @@ enum Library: String, CaseIterable {
             return  [
                 .target(
                     name: "Libavcodec",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavcodec.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavcodec.xcframework.zip",
                     checksum: ""
                 ),
                 .target(
                     name: "Libavdevice",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavdevice.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavdevice.xcframework.zip",
                     checksum: ""
                 ),
                 .target(
                     name: "Libavformat",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavformat.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavformat.xcframework.zip",
                     checksum: ""
                 ),
                 .target(
                     name: "Libavfilter",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavfilter.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavfilter.xcframework.zip",
                     checksum: ""
                 ),
                 .target(
                     name: "Libavutil",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavutil.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavutil.xcframework.zip",
                     checksum: ""
                 ),
                 .target(
                     name: "Libswresample",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libswresample.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libswresample.xcframework.zip",
                     checksum: ""
                 ),
                 .target(
                     name: "Libswscale",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libswscale.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libswscale.xcframework.zip",
                     checksum: ""
                 ),
             ]
@@ -194,153 +194,153 @@ enum Library: String, CaseIterable {
             return  [
                 .target(
                     name: "Libcrypto",
-                    url: "https://github.com/mpvkit/openssl-build/releases/download/\(self.version)/Libcrypto.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/openssl-build/releases/download/\(self.version)/Libcrypto.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/openssl-build/releases/download/\(self.version)/Libcrypto.xcframework.zip",
+                    checksum: "https://github.com/endpne/openssl-build/releases/download/\(self.version)/Libcrypto.xcframework.checksum.txt"
                 ),
                 .target(
                     name: "Libssl",
-                    url: "https://github.com/mpvkit/openssl-build/releases/download/\(self.version)/Libssl.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/openssl-build/releases/download/\(self.version)/Libssl.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/openssl-build/releases/download/\(self.version)/Libssl.xcframework.zip",
+                    checksum: "https://github.com/endpne/openssl-build/releases/download/\(self.version)/Libssl.xcframework.checksum.txt"
                 ),
             ]
         case .gnutls:
             return  [
                 .target(
                     name: "gnutls",
-                    url: "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/gnutls.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/gnutls.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/gnutls.xcframework.zip",
+                    checksum: "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/gnutls.xcframework.checksum.txt"
                 ),
             ]
         case .nettle:
             return  [
                 .target(
                     name: "nettle",
-                    url: "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/nettle.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/nettle.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/nettle.xcframework.zip",
+                    checksum: "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/nettle.xcframework.checksum.txt"
                 ),
                 .target(
                     name: "hogweed",
-                    url: "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/hogweed.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/hogweed.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/hogweed.xcframework.zip",
+                    checksum: "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/hogweed.xcframework.checksum.txt"
                 ),
             ]
         case .gmp:
             return  [
                 .target(
                     name: "gmp",
-                    url: "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/gmp.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/gnutls-build/releases/download/\(self.version)/gmp.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/gmp.xcframework.zip",
+                    checksum: "https://github.com/endpne/gnutls-build/releases/download/\(self.version)/gmp.xcframework.checksum.txt"
                 ),
             ]
         case .libass:
             return  [
                 .target(
                     name: "Libass",
-                    url: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libass.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libass.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libass.xcframework.zip",
+                    checksum: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libass.xcframework.checksum.txt"
                 ),
             ]
         case .libunibreak:
             return  [
                 .target(
                     name: "Libunibreak",
-                    url: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libunibreak.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libunibreak.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libunibreak.xcframework.zip",
+                    checksum: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libunibreak.xcframework.checksum.txt"
                 ),
             ]
         case .libfreetype:
             return  [
                 .target(
                     name: "Libfreetype",
-                    url: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libfreetype.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libfreetype.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libfreetype.xcframework.zip",
+                    checksum: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libfreetype.xcframework.checksum.txt"
                 ),
             ]
         case .libfribidi:
             return  [
                 .target(
                     name: "Libfribidi",
-                    url: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libfribidi.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libfribidi.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libfribidi.xcframework.zip",
+                    checksum: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libfribidi.xcframework.checksum.txt"
                 ),
             ]
         case .libharfbuzz:
             return  [
                 .target(
                     name: "Libharfbuzz",
-                    url: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libharfbuzz.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libass-build/releases/download/\(self.version)/Libharfbuzz.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libharfbuzz.xcframework.zip",
+                    checksum: "https://github.com/endpne/libass-build/releases/download/\(self.version)/Libharfbuzz.xcframework.checksum.txt"
                 ),
             ]
         case .libsmbclient:
             return  [
                 .target(
                     name: "Libsmbclient",
-                    url: "https://github.com/mpvkit/libsmbclient-build/releases/download/\(self.version)/Libsmbclient.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libsmbclient-build/releases/download/\(self.version)/Libsmbclient.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libsmbclient-build/releases/download/\(self.version)/Libsmbclient.xcframework.zip",
+                    checksum: "https://github.com/endpne/libsmbclient-build/releases/download/\(self.version)/Libsmbclient.xcframework.checksum.txt"
                 ),
             ]
         case .lcms2:
             return  [
                 .target(
                     name: "lcms2",
-                    url: "https://github.com/mpvkit/libplacebo-build/releases/download/\(self.version)/lcms2.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libplacebo-build/releases/download/\(self.version)/lcms2.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libplacebo-build/releases/download/\(self.version)/lcms2.xcframework.zip",
+                    checksum: "https://github.com/endpne/libplacebo-build/releases/download/\(self.version)/lcms2.xcframework.checksum.txt"
                 ),
             ]
         case .libplacebo:
             return  [
                 .target(
                     name: "Libplacebo",
-                    url: "https://github.com/mpvkit/libplacebo-build/releases/download/\(self.version)/Libplacebo.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libplacebo-build/releases/download/\(self.version)/Libplacebo.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libplacebo-build/releases/download/\(self.version)/Libplacebo.xcframework.zip",
+                    checksum: "https://github.com/endpne/libplacebo-build/releases/download/\(self.version)/Libplacebo.xcframework.checksum.txt"
                 ),
             ]
         case .libdav1d:
             return  [
                 .target(
                     name: "Libdav1d",
-                    url: "https://github.com/mpvkit/libdav1d-build/releases/download/\(self.version)/Libdav1d.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libdav1d-build/releases/download/\(self.version)/Libdav1d.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libdav1d-build/releases/download/\(self.version)/Libdav1d.xcframework.zip",
+                    checksum: "https://github.com/endpne/libdav1d-build/releases/download/\(self.version)/Libdav1d.xcframework.checksum.txt"
                 ),
             ]
         case .libdovi:
             return  [
                 .target(
                     name: "Libdovi",
-                    url: "https://github.com/mpvkit/libdovi-build/releases/download/\(self.version)/Libdovi.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libdovi-build/releases/download/\(self.version)/Libdovi.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libdovi-build/releases/download/\(self.version)/Libdovi.xcframework.zip",
+                    checksum: "https://github.com/endpne/libdovi-build/releases/download/\(self.version)/Libdovi.xcframework.checksum.txt"
                 ),
             ]
         case .vulkan:
             return  [
                 .target(
                     name: "MoltenVK",
-                    url: "https://github.com/mpvkit/moltenvk-build/releases/download/\(self.version)/MoltenVK.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/moltenvk-build/releases/download/\(self.version)/MoltenVK.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/moltenvk-build/releases/download/\(self.version)/MoltenVK.xcframework.zip",
+                    checksum: "https://github.com/endpne/moltenvk-build/releases/download/\(self.version)/MoltenVK.xcframework.checksum.txt"
                 ),
             ]
         case .libshaderc:
             return  [
                 .target(
                     name: "Libshaderc_combined",
-                    url: "https://github.com/mpvkit/libshaderc-build/releases/download/\(self.version)/Libshaderc_combined.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libshaderc-build/releases/download/\(self.version)/Libshaderc_combined.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libshaderc-build/releases/download/\(self.version)/Libshaderc_combined.xcframework.zip",
+                    checksum: "https://github.com/endpne/libshaderc-build/releases/download/\(self.version)/Libshaderc_combined.xcframework.checksum.txt"
                 ),
             ]
         case .libuchardet:
             return  [
                 .target(
                     name: "Libuchardet",
-                    url: "https://github.com/mpvkit/libuchardet-build/releases/download/\(self.version)/Libuchardet.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libuchardet-build/releases/download/\(self.version)/Libuchardet.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libuchardet-build/releases/download/\(self.version)/Libuchardet.xcframework.zip",
+                    checksum: "https://github.com/endpne/libuchardet-build/releases/download/\(self.version)/Libuchardet.xcframework.checksum.txt"
                 ),
             ]
         case .libbluray:
             return [
                 .target(
                     name: "Libbluray",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libbluray.xcframework.zip",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libbluray.xcframework.zip",
                     checksum: ""
                 ),
             ]
@@ -348,16 +348,16 @@ enum Library: String, CaseIterable {
             return  [
                 .target(
                     name: "Libluajit",
-                    url: "https://github.com/mpvkit/libluajit-build/releases/download/\(self.version)/Libluajit.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libluajit-build/releases/download/\(self.version)/Libluajit.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libluajit-build/releases/download/\(self.version)/Libluajit.xcframework.zip",
+                    checksum: "https://github.com/endpne/libluajit-build/releases/download/\(self.version)/Libluajit.xcframework.checksum.txt"
                 ),
             ]
         case .libuavs3d:
             return  [
                 .target(
                     name: "Libuavs3d",
-                    url: "https://github.com/mpvkit/libuavs3d-build/releases/download/\(self.version)/Libuavs3d.xcframework.zip",
-                    checksum: "https://github.com/mpvkit/libuavs3d-build/releases/download/\(self.version)/Libuavs3d.xcframework.checksum.txt"
+                    url: "https://github.com/endpne/libuavs3d-build/releases/download/\(self.version)/Libuavs3d.xcframework.zip",
+                    checksum: "https://github.com/endpne/libuavs3d-build/releases/download/\(self.version)/Libuavs3d.xcframework.checksum.txt"
                 ),
             ]
         }
