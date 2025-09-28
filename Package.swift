@@ -94,42 +94,42 @@ let package = Package(
         .binaryTarget(
             name: "Libmpv-GPL",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libmpv-GPL.xcframework.zip",
-            checksum: "474e724d7d3133aeddd4219792a94223a43557aef049b7b43c41f610641748f0"
+            checksum: "b5e372c99f82641986c9f87aac8749024e567d4a546b574dd26b97ab4cf78663"
         ),
         .binaryTarget(
             name: "Libavcodec-GPL",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavcodec-GPL.xcframework.zip",
-            checksum: "0979c326505e7a18ffcadd6504fbe460f7174762c80e1b22ddc25ae40278746a"
+            checksum: "cc2fe7e13b1e4c3a115040036405cb63a4a9ee6f43a48f32363b7ae4fca2340c"
         ),
         .binaryTarget(
             name: "Libavdevice-GPL",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavdevice-GPL.xcframework.zip",
-            checksum: "008057839ab0ae0b92b3531e775dba1d7eca5ec8dfc9210c7c9b7e9c3af0dd60"
+            checksum: "0856cf3fa95976f5b220900b475108255f6c7c73c99b60286e02bbac49ff185d"
         ),
         .binaryTarget(
             name: "Libavformat-GPL",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavformat-GPL.xcframework.zip",
-            checksum: "f1795f25d0e30ee7a73cf75cc6d552cbfe86e3ad50b48c376206d38f027426f7"
+            checksum: "179347a63ac0d56c86f9867d0b9096d94d9999cb3c51a04cca20f7c36f6b1030"
         ),
         .binaryTarget(
             name: "Libavfilter-GPL",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavfilter-GPL.xcframework.zip",
-            checksum: "b7abcd4461edd2d3e245ab861b4f3f248ef6a6561809e595382518b2bb435e6b"
+            checksum: "863faabb842c804777bffbc7e0b5fbb083ed3d5457ba4dc9df2ee6c189fb7608"
         ),
         .binaryTarget(
             name: "Libavutil-GPL",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavutil-GPL.xcframework.zip",
-            checksum: "d1c88aae66ad383408b34a1e158e6c4a097da55579a5775f927f42285aca6d4d"
+            checksum: "b5cfb24532c049c5416171e4f55932bd831f38a30865f1da2220a6e8d2f468ab"
         ),
         .binaryTarget(
             name: "Libswresample-GPL",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libswresample-GPL.xcframework.zip",
-            checksum: "079a355d28fb6b61bf9850796fcb1ef8d09385b6ba71be4a2a829e92893b3dc3"
+            checksum: "a686b9719a52e4a76bb0c68f2a3fef6246a61cccfd7585dc29f5b65d889146a4"
         ),
         .binaryTarget(
             name: "Libswscale-GPL",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libswscale-GPL.xcframework.zip",
-            checksum: "db8a454358324d8ce4a84ec38dc1e116845839bf829caeb7d4a79180d892a8d7"
+            checksum: "7e4a9d0c04001e4fbc9ac2f6b327b500a200d7f9ad598d70113269d78b6d67c6"
         ),
         //AUTO_GENERATE_TARGETS_BEGIN//
 
@@ -248,37 +248,37 @@ let package = Package(
         .binaryTarget(
             name: "Libavcodec",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavcodec.xcframework.zip",
-            checksum: "cea27649413c6a34fe68453d749ba774dc753ecbb0837ea9bfe0f0cc603c295a"
+            checksum: "fc7473420ff4bea8e0d84e9244892de052673103bc5219afbf564ef8f8d3a134"
         ),
         .binaryTarget(
             name: "Libavdevice",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavdevice.xcframework.zip",
-            checksum: "9d89ddbb3eed18d48d94a10c47027fd21fe4844b35cec5c9361d0f76c60a76e4"
+            checksum: "01e7b7bd0650173751afe5bb543256c9057796bc87183c5d4a7054b9c6063521"
         ),
         .binaryTarget(
             name: "Libavformat",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavformat.xcframework.zip",
-            checksum: "a9886de50da31ceb33ed14a4fe4d05109d93018c6f35a7439a7d82dc1e122759"
+            checksum: "80d470dc62fd6e887869460c99fb05096806f9f2520fdcdd249c5defe214855b"
         ),
         .binaryTarget(
             name: "Libavfilter",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavfilter.xcframework.zip",
-            checksum: "c2bedd3c05aad2366c1306f443776d480a372ee22acf4cd6ad9aacb6e2c9e1e4"
+            checksum: "904a28fa374fc276361eacb33bf1f9bc22c3d553d7cd2648160cfbfc1ca85c67"
         ),
         .binaryTarget(
             name: "Libavutil",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavutil.xcframework.zip",
-            checksum: "09013def7802bed3f6f80938e2370a84b781b4ff1be4e58675228bb925409a30"
+            checksum: "1954e7a917ca2545104554e73b383b55088ecb797a2b4b9ab11e239e1fa73d95"
         ),
         .binaryTarget(
             name: "Libswresample",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libswresample.xcframework.zip",
-            checksum: "f34a7893c8ba5d551fc2fe1515af5160a224b26bdc3276383e6b82706da9c451"
+            checksum: "4b111445cc9d19f43d7897172d5078753bb4ce95ba83f1a291983e0232cee973"
         ),
         .binaryTarget(
             name: "Libswscale",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libswscale.xcframework.zip",
-            checksum: "1d785d465a060c842543975f3d33064ffd95555f3fe2e7a85ba35e10f94411d7"
+            checksum: "2d62ba2941153418222042ecd071cadb2d8ac32358cf0a3b5ce48e00c053edcc"
         ),
 
         .binaryTarget(
@@ -296,13 +296,13 @@ let package = Package(
         .binaryTarget(
             name: "Libbluray",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libbluray.xcframework.zip",
-            checksum: "7be274bdb716e916c64a62fa0e6f81caa84e2493b3d289baa361e7ae26d8f185"
+            checksum: "f1d7ebd23b4268b656d11700ceb968becfbeb398424495debe3b35d893bbb83c"
         ),
 
         .binaryTarget(
             name: "Libmpv",
             url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libmpv.xcframework.zip",
-            checksum: "d7c30569d1fbbc30ffde0ee7555106c113500036c5f629d1118dc65e1e037afe"
+            checksum: "3ae8c3dd3ca89db50781ad154a290814bf98a4d768eea6a1923108792385b073"
         ),
         //AUTO_GENERATE_TARGETS_END//
     ]
