@@ -1,9 +1,142 @@
-diff --git forkSrcPrefix/video/out/vulkan/context_moltenvk.m forkDstPrefix/video/out/vulkan/context_moltenvk.m
+From 60ab6cea99d4df89b7fa22c254a6aae77c8a6b61 Mon Sep 17 00:00:00 2001
+From: endpne <ourfor@qq.com>
+Date: Sun, 28 Sep 2025 11:22:10 +0800
+Subject: [PATCH] =?UTF-8?q?=F0=9F=90=9B=20fix=20mac=20vulkan=20resize=20is?=
+ =?UTF-8?q?sue?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ meson.build                         |  11 +++
+ meson.options                       |   1 +
+ options/options.c                   |   3 +
+ options/options.h                   |   2 +
+ player/command.c                    |   2 +-
+ video/out/gpu/context.c             |   4 ++
+ video/out/vulkan/common.h           |   5 +-
+ video/out/vulkan/context_moltenvk.m | 104 ++++++++++++++++++++++++++++
+ 8 files changed, 130 insertions(+), 2 deletions(-)
+ create mode 100644 video/out/vulkan/context_moltenvk.m
+
+diff --git a/meson.build b/meson.build
+index b5b6c2ca50..979704029b 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1307,6 +1307,17 @@ if features['vulkan'] and features['x11']
+      sources += files('video/out/vulkan/context_xlib.c')
+ endif
+ 
++if host_machine.system() == 'darwin'
++    moltenvk = get_option('moltenvk').require(
++        features['vulkan'],
++        error_message: 'vulkan or moltenvk header could not be found!',
++    )
++    features += {'moltenvk': moltenvk.allowed()}
++    if features['vulkan'] and features['moltenvk']
++        sources += files('video/out/vulkan/context_moltenvk.m')
++    endif
++endif
++
+ features += {'vk-khr-display': vulkan.type_name() == 'internal' or
+                                cc.has_function('vkCreateDisplayPlaneSurfaceKHR', prefix: '#include <vulkan/vulkan_core.h>',
+                                                dependencies: [vulkan])}
+diff --git a/meson.options b/meson.options
+index dae0a333ef..6ed28af20a 100644
+--- a/meson.options
++++ b/meson.options
+@@ -101,6 +101,7 @@ option('gl-dxinterop-d3d9', type: 'feature', value: 'auto', description: 'OpenGL
+ option('ios-gl', type: 'feature', value: 'auto', description: 'iOS OpenGL ES interop support')
+ option('videotoolbox-gl', type: 'feature', value: 'auto', description: 'Videotoolbox with OpenGL')
+ option('videotoolbox-pl', type: 'feature', value: 'auto', description: 'Videotoolbox with libplacebo')
++option('moltenvk', type: 'feature', value: 'auto', description: 'Moltenvk context')
+ 
+ # macOS features
+ option('macos-10-15-4-features', type: 'feature', value: 'auto', description: 'macOS 10.15.4 SDK Features')
+diff --git a/options/options.c b/options/options.c
+index 8387fac9e5..21a14f685f 100644
+--- a/options/options.c
++++ b/options/options.c
+@@ -247,6 +247,9 @@ static const m_option_t mp_vo_opt_list[] = {
+ #endif
+ #if HAVE_D3D11
+     {"d3d11-composition-size", OPT_SIZE_BOX(d3d11_composition_size)},
++#endif
++#if HAVE_MOLTENVK
++    {"metal-layer-size", OPT_SIZE_BOX(metal_layer_size)},
+ #endif
+     {"swapchain-depth", OPT_INT(swapchain_depth), M_RANGE(1, VO_MAX_SWAPCHAIN_DEPTH)},
+     {"override-display-fps", OPT_REPLACED("display-fps-override")},
+diff --git a/options/options.h b/options/options.h
+index 5b55dc4d1c..462e0068f8 100644
+--- a/options/options.h
++++ b/options/options.h
+@@ -87,6 +87,8 @@ typedef struct mp_vo_opts {
+     struct m_geometry android_surface_size;
+ 
+     struct m_geometry d3d11_composition_size;
++
++    struct m_geometry metal_layer_size;
+ 
+     int swapchain_depth;  // max number of images to render ahead
+ 
+diff --git a/player/command.c b/player/command.c
+index 9a378f76df..60ee5883bb 100644
+--- a/player/command.c
++++ b/player/command.c
+@@ -8001,7 +8001,7 @@ void mp_option_run_callback(struct MPContext *mpctx, struct mp_option_callback *
+             queue_seek(mpctx, MPSEEK_RELATIVE, 0.0, MPSEEK_EXACT, 0);
+     }
+ 
+-    if (opt_ptr == &opts->vo->android_surface_size || opt_ptr == &opts->vo->d3d11_composition_size) {
++    if (opt_ptr == &opts->vo->android_surface_size || opt_ptr == &opts->vo->d3d11_composition_size || opt_ptr == &opts->vo->metal_layer_size) {
+         if (mpctx->video_out)
+             vo_control(mpctx->video_out, VOCTRL_EXTERNAL_RESIZE, NULL);
+     }
+diff --git a/video/out/gpu/context.c b/video/out/gpu/context.c
+index 60c0641a70..8d23e3913f 100644
+--- a/video/out/gpu/context.c
++++ b/video/out/gpu/context.c
+@@ -50,6 +50,7 @@ extern const struct ra_ctx_fns ra_ctx_vulkan_xlib;
+ extern const struct ra_ctx_fns ra_ctx_vulkan_android;
+ extern const struct ra_ctx_fns ra_ctx_vulkan_display;
+ extern const struct ra_ctx_fns ra_ctx_vulkan_mac;
++extern const struct ra_ctx_fns ra_ctx_vulkan_moltenvk;
+ 
+ /* Direct3D 11 */
+ extern const struct ra_ctx_fns ra_ctx_d3d11;
+@@ -126,6 +127,9 @@ static const struct ra_ctx_fns *const contexts[] = {
+ 
+ // Vulkan contexts (fallbacks):
+ #if HAVE_VULKAN
++#if HAVE_MOLTENVK
++     &ra_ctx_vulkan_moltenvk,
++#endif
+ #if HAVE_ANDROID
+     &ra_ctx_vulkan_android,
+ #endif
+diff --git a/video/out/vulkan/common.h b/video/out/vulkan/common.h
+index e75cb228f8..662ab2fed8 100644
+--- a/video/out/vulkan/common.h
++++ b/video/out/vulkan/common.h
+@@ -22,7 +22,10 @@
+ #if HAVE_WIN32_DESKTOP
+ #define VK_USE_PLATFORM_WIN32_KHR
+ #endif
+-#if HAVE_COCOA
++#if HAVE_MOLTENVK
++#include <MoltenVK/mvk_vulkan.h>
++#endif
++#if HAVE_COCOA && !defined(VK_USE_PLATFORM_METAL_EXT)
+ #define VK_USE_PLATFORM_METAL_EXT
+ #endif
+ 
+diff --git a/video/out/vulkan/context_moltenvk.m b/video/out/vulkan/context_moltenvk.m
 new file mode 100644
-index 0000000000000000000000000000000000000000..e24572375775622c9e00f11f200bafb4bc38c4b4
+index 0000000000..d09d8ad9dd
 --- /dev/null
-+++ forkDstPrefix/video/out/vulkan/context_moltenvk.m
-@@ -0,0 +1,96 @@
++++ b/video/out/vulkan/context_moltenvk.m
+@@ -0,0 +1,104 @@
 +/*
 + * This file is part of mpv.
 + *
@@ -61,7 +194,7 @@ index 0000000000000000000000000000000000000000..e24572375775622c9e00f11f200bafb4
 +         .pLayer = p->layer,
 +    };
 +
-+    struct ra_vk_ctx_params params = {0};
++    struct ra_ctx_params params = {0};
 +
 +    VkInstance inst = vk->vkinst->instance;
 +    VkResult res = vkCreateMetalSurfaceEXT(inst, &info, NULL, &vk->surface);
@@ -81,9 +214,17 @@ index 0000000000000000000000000000000000000000..e24572375775622c9e00f11f200bafb4
 +
 +static bool moltenvk_reconfig(struct ra_ctx *ctx)
 +{
-+    struct priv *p = ctx->priv;
-+    CGSize s = p->layer.drawableSize;
-+    ra_vk_ctx_resize(ctx, s.width, s.height);
++    struct m_geometry new_size = ctx->vo->opts->metal_layer_size;
++    if (new_size.w > 0 && new_size.h > 0) {
++        struct priv *p = ctx->priv;
++        CGSize s = CGSizeMake(new_size.w, new_size.h);
++        ra_vk_ctx_resize(ctx, s.width, s.height);
++        p->layer.drawableSize = CGSizeMake(s.width, s.height);
++    } else {
++        struct priv *p = ctx->priv;
++        CGSize s = p->layer.drawableSize;
++        ra_vk_ctx_resize(ctx, s.width, s.height);
++    }
 +    return true;
 +}
 +
@@ -100,74 +241,6 @@ index 0000000000000000000000000000000000000000..e24572375775622c9e00f11f200bafb4
 +    .init           = moltenvk_init,
 +    .uninit         = moltenvk_uninit,
 +};
-\ No newline at end of file
-diff --git forkSrcPrefix/video/out/gpu/context.c forkDstPrefix/video/out/gpu/context.c
-index 88d4f4232ddd3886e42ddf23dd2970b13bdd1e92..df9bd99de126d2e2371544248d528b21b99be263 100644
---- forkSrcPrefix/video/out/gpu/context.c
-+++ forkDstPrefix/video/out/gpu/context.c
-@@ -50,6 +50,7 @@ extern const struct ra_ctx_fns ra_ctx_vulkan_xlib;
- extern const struct ra_ctx_fns ra_ctx_vulkan_android;
- extern const struct ra_ctx_fns ra_ctx_vulkan_display;
- extern const struct ra_ctx_fns ra_ctx_vulkan_mac;
-+extern const struct ra_ctx_fns ra_ctx_vulkan_moltenvk;
- 
- /* Direct3D 11 */
- extern const struct ra_ctx_fns ra_ctx_d3d11;
-@@ -91,6 +92,9 @@ static const struct ra_ctx_fns *contexts[] = {
- // Vulkan contexts:
- #if HAVE_VULKAN
- 
-+#if HAVE_MOLTENVK
-+     &ra_ctx_vulkan_moltenvk,
-+#endif
- #if HAVE_ANDROID
-     &ra_ctx_vulkan_android,
- #endif
-diff --git forkSrcPrefix/video/out/vulkan/common.h forkDstPrefix/video/out/vulkan/common.h
-index e75cb228f8d99462ccecf7780098ea97ae7cfe02..afc17284773204563f4c90b4860758e61068d460 100644
---- forkSrcPrefix/video/out/vulkan/common.h
-+++ forkDstPrefix/video/out/vulkan/common.h
-@@ -22,6 +22,9 @@
- #if HAVE_WIN32_DESKTOP
- #define VK_USE_PLATFORM_WIN32_KHR
- #endif
-+#if HAVE_MOLTENVK
-+#include <MoltenVK/mvk_vulkan.h>
-+#endif
- #if HAVE_COCOA
- #define VK_USE_PLATFORM_METAL_EXT
- #endif
-diff --git forkSrcPrefix/meson.build forkDstPrefix/meson.build
-index b7bcb1b0badb21743f40f707d908092042de6db3..ebba7eeb7365b0e3cced1b3f2f23971101b0f66b 100644
---- forkSrcPrefix/meson.build
-+++ forkDstPrefix/meson.build
-@@ -1310,6 +1310,17 @@ if features['vulkan'] and features['x11']
-      sources += files('video/out/vulkan/context_xlib.c')
- endif
- 
-+if host_machine.system() == 'darwin'
-+    moltenvk = get_option('moltenvk').require(
-+        features['vulkan'],
-+        error_message: 'vulkan or moltenvk header could not be found!',
-+    )
-+    features += {'moltenvk': moltenvk.allowed()}
-+    if features['vulkan'] and features['moltenvk']
-+        sources += files('video/out/vulkan/context_moltenvk.m')
-+    endif
-+endif
-+
- features += {'vk-khr-display': vulkan.type_name() == 'internal' or
-                                cc.has_function('vkCreateDisplayPlaneSurfaceKHR', prefix: '#include <vulkan/vulkan_core.h>',
-                                                dependencies: [vulkan])}
-diff --git forkSrcPrefix/meson_options.txt forkDstPrefix/meson_options.txt
-index c6e6337d68b3e1210513c767db79cc204f404000..55fc334edf27f4e495dbb75f6316ecaffc661a8c 100644
---- forkSrcPrefix/meson_options.txt
-+++ forkDstPrefix/meson_options.txt
-@@ -103,6 +103,7 @@ option('gl-dxinterop-d3d9', type: 'feature', value: 'auto', description: 'OpenGL
- option('ios-gl', type: 'feature', value: 'auto', description: 'iOS OpenGL ES interop support')
- option('videotoolbox-gl', type: 'feature', value: 'auto', description: 'Videotoolbox with OpenGL')
- option('videotoolbox-pl', type: 'feature', value: 'auto', description: 'Videotoolbox with libplacebo')
-+option('moltenvk', type: 'feature', value: 'auto', description: 'Moltenvk context')
- 
- # macOS features
- option('macos-10-15-4-features', type: 'feature', value: 'auto', description: 'macOS 10.15.4 SDK Features')
+-- 
+2.51.0
+
