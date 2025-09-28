@@ -382,6 +382,7 @@ private class BuildMPV: BaseBuild {
     override func arguments(platform: PlatformType, arch: ArchType) -> [String] {
         var array = [
             "-Dlibmpv=true",
+            "-Ddefault_library=static",
             "-Dgl=enabled",
             "-Dplain-gl=enabled",
             "-Diconv=enabled",
