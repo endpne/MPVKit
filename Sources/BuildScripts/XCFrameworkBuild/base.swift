@@ -629,7 +629,7 @@ class BaseBuild {
             let sourceLib = releaseDirPath + [library.rawValue]
             let destZipLibPath = releaseDirPath + [library.rawValue + "-all.zip"]
             try? FileManager.default.removeItem(at: destZipLibPath)
-            try Utility.launch(path: "/usr/bin/zip", arguments: ["-qr", destZipLibPath.path, "./"], currentDirectoryURL: sourceLib)
+            try Utility.launch(path: "/usr/bin/zip", arguments: ["-qry", destZipLibPath.path, "./"], currentDirectoryURL: sourceLib)
         }
 
         // zip xcframeworks
@@ -650,7 +650,7 @@ class BaseBuild {
             let XCFrameworkFile =  framework + ".xcframework"
             let zipFile = releaseDirPath + [framework + ".xcframework.zip"]
             let checksumFile = releaseDirPath + [framework + ".xcframework.checksum.txt"]
-            try Utility.launch(path: "/usr/bin/zip", arguments: ["-qr", zipFile.path, XCFrameworkFile], currentDirectoryURL: self.xcframeworkDirectoryURL)
+            try Utility.launch(path: "/usr/bin/zip", arguments: ["-qry", zipFile.path, XCFrameworkFile], currentDirectoryURL: self.xcframeworkDirectoryURL)
             Utility.shell("swift package compute-checksum \(zipFile.path) > \(checksumFile.path)")
 
             if BaseBuild.options.enableSplitPlatform {
@@ -661,7 +661,7 @@ class BaseBuild {
                     if FileManager.default.fileExists(atPath: XCFrameworkPath.path) {
                         let zipFile = releaseDirPath + [XCFrameworkName + ".xcframework.zip"]
                         let checksumFile = releaseDirPath + [XCFrameworkName + ".xcframework.checksum.txt"]
-                        try Utility.launch(path: "/usr/bin/zip", arguments: ["-qr", zipFile.path, XCFrameworkFile], currentDirectoryURL: self.xcframeworkDirectoryURL)
+                        try Utility.launch(path: "/usr/bin/zip", arguments: ["-qry", zipFile.path, XCFrameworkFile], currentDirectoryURL: self.xcframeworkDirectoryURL)
                         Utility.shell("swift package compute-checksum \(zipFile.path) > \(checksumFile.path)")
                     }
                 }
