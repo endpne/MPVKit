@@ -5,37 +5,36 @@ do {
     try Build.performCommand(options)
 
     // SSL
-    // try BuildOpenSSL().buildALL()
-    // try BuildGmp().buildALL()
-    // try BuildNettle().buildALL()
-    // try BuildGnutls().buildALL()
+    try BuildOpenSSL().buildALL()
+    try BuildGmp().buildALL()
+    try BuildNettle().buildALL()
+    try BuildGnutls().buildALL()
 
-    // // libass
-    // try BuildUnibreak().buildALL()
-    // try BuildFreetype().buildALL()
-    // try BuildFribidi().buildALL()
-    // try BuildHarfbuzz().buildALL()
-    // try BuildASS().buildALL()
+    // libass
+    try BuildUnibreak().buildALL()
+    try BuildFreetype().buildALL()
+    try BuildFribidi().buildALL()
+    try BuildHarfbuzz().buildALL()
+    try BuildASS().buildALL()
 
-    // // libsmbclient
-    // try BuildSmbclient().buildALL()
+    // libsmbclient
+    try BuildSmbclient().buildALL()
     
-    // // ffmpeg
-    // try BuildUavs3d().buildALL()
-    // try BuildDovi().buildALL()
-    // try BuildVulkan().buildALL()
-    // try BuildShaderc().buildALL()
-    // try BuildLittleCms().buildALL()
-    // try BuildPlacebo().buildALL()
-    // try BuildDav1d().buildALL()
-    // try BuildFFMPEG().buildALL()
+    // ffmpeg
+    try BuildUavs3d().buildALL()
+    try BuildDovi().buildALL()
+    try BuildVulkan().buildALL()
+    try BuildShaderc().buildALL()
+    try BuildLittleCms().buildALL()
+    try BuildPlacebo().buildALL()
+    try BuildDav1d().buildALL()
+    try BuildFFMPEG().buildALL()
 
-    // // mpv
-    // try BuildUchardet().buildALL()
-    // try BuildLuaJIT().buildALL()
-    // try BuildBluray().buildALL()
+    // mpv
+    try BuildUchardet().buildALL()
+    try BuildLuaJIT().buildALL()
+    try BuildBluray().buildALL()
     try BuildMPV().buildALL()
-    print("All done.")
 } catch {
     print(error.localizedDescription)
     exit(1)
