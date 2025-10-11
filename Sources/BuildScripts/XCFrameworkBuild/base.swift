@@ -176,6 +176,7 @@ class BaseBuild {
             
 
             let crossFile = createMesonCrossFile(platform: platform, arch: arch)
+            print("meson cross file: \(crossFile.path)")
             let meson = Utility.shell("which meson", isOutput: true)!
             try Utility.launch(path: meson, arguments: ["setup", buildURL.path, "--cross-file=\(crossFile.path)"] + arguments(platform: platform, arch: arch), currentDirectoryURL: directoryURL, environment: environ)
             try Utility.launch(path: meson, arguments: ["compile", "--clean"], currentDirectoryURL: buildURL, environment: environ)
@@ -298,6 +299,24 @@ class BaseBuild {
                 ldFlags.append("-L\(path.path)/lib")
                 ldFlags.append("-l\(libname)")
             }
+        }
+        if library == .libmpv {
+            let exportSymbols = directoryURL + "(library.rawValue).exports"
+            if FileManager.default.fileExists(atPath: exportSymbols.path) {
+                print("link with -exported_symbols_list \(exportSymbols.path)")
+            } else {
+                // create empty file
+                let content = """
+                _mpv_*
+                _libmpv_*
+                _OBJC_CLASS_*
+                """.data(using: .utf8)
+                FileManager.default.createFile(atPath: exportSymbols.path, contents: content, attributes: nil)
+                print("link with -exported_symbols_list \(exportSymbols.path) (empty file created)")
+            }
+            ldFlags.append("-Wl,-exported_symbols_list")
+            ldFlags.append(exportSymbols.path)
+            ldFlags.append("-Wl,-x")
         }
         return ldFlags
     }
@@ -425,6 +444,28 @@ class BaseBuild {
         """
         FileManager.default.createFile(atPath: frameworkDir.path + "/Modules/module.modulemap", contents: modulemap.data(using: .utf8), attributes: nil)
         createPlist(path: frameworkDir.path + "/Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
+        if platform == .macos {
+            // List files
+            let files = try FileManager.default.contentsOfDirectory(atPath: frameworkDir.path)
+            print("macOS framework files: \(files)")
+
+            // Create `Resources`、 `Versions` directory for macOS framework
+            try? FileManager.default.createDirectory(at: frameworkDir + "Versions", withIntermediateDirectories: true, attributes: nil)
+            try? FileManager.default.createDirectory(at: frameworkDir + "Versions/A", withIntermediateDirectories: true, attributes: nil)
+            try? FileManager.default.createDirectory(at: frameworkDir + "Versions/A/Resources", withIntermediateDirectories: true, attributes: nil)
+            // Move `Info.plist`、`Headers`、`Modules` to `Versions/A/`
+            try? FileManager.default.moveItem(at: frameworkDir + framework, to: frameworkDir + "Versions/A/\(framework)")
+            try? FileManager.default.moveItem(at: frameworkDir + "Info.plist", to: frameworkDir + "Versions/A/Resources/Info.plist")
+            try? FileManager.default.moveItem(at: frameworkDir + "Headers", to: frameworkDir + "Versions/A/Headers")
+            try? FileManager.default.moveItem(at: frameworkDir + "Modules", to: frameworkDir + "Versions/A/Modules")
+            // Create symbolic links
+            print("Creating symbolic links for macOS framework...")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Versions/Current", withDestinationPath: "A")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Headers", withDestinationPath: "Versions/Current/Headers")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Modules", withDestinationPath: "Versions/Current/Modules")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Resources", withDestinationPath: "Versions/Current/Resources")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/\(framework)", withDestinationPath: "Versions/Current/\(framework)")
+        }
         return frameworkDir.path
     }
 
@@ -492,6 +533,10 @@ class BaseBuild {
     private func createMesonCrossFile(platform: PlatformType, arch: ArchType) -> URL {
         let url = scratch(platform: platform, arch: arch)
         let crossFile = url + "crossFile.meson"
+        var libType = "static"
+        if library == .libmpv {
+            libType = "shared"
+        }
         let prefix = thinDir(platform: platform, arch: arch)
         let cFlags = cFlags(platform: platform, arch: arch).map {
             "'" + $0 + "'"
@@ -522,7 +567,7 @@ class BaseBuild {
         endian = 'little'
 
         [built-in options]
-        default_library = 'static'
+        default_library = '\(libType)'
         buildtype = 'release'
         prefix = '\(prefix.path)'
         c_args = [\(cFlags)]
