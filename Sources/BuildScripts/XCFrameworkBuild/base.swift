@@ -446,11 +446,12 @@ class BaseBuild {
         """
         FileManager.default.createFile(atPath: frameworkDir.path + "/Modules/module.modulemap", contents: modulemap.data(using: .utf8), attributes: nil)
         createPlist(path: frameworkDir.path + "/Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
-        if platform == .macos {
-            // List files
+        if library == .MPVKit {
             let libPath = (frameworkDir + framework).path
-            // install_name_tool -id @rpath/MPVKit.framework/MPVKit $libPath
             _ = try? Utility.launch(path: "/usr/bin/install_name_tool", arguments: ["-id", "@rpath/\(framework).framework/\(framework)", libPath])
+        }
+
+        if platform == .macos {
             // Create `Resources`、 `Versions` directory for macOS framework
             try? FileManager.default.createDirectory(at: frameworkDir + "Versions", withIntermediateDirectories: true, attributes: nil)
             try? FileManager.default.createDirectory(at: frameworkDir + "Versions/A", withIntermediateDirectories: true, attributes: nil)
