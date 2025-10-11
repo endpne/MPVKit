@@ -449,9 +449,9 @@ class BaseBuild {
         createPlist(path: frameworkDir.path + "/Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
         if platform == .macos {
             // List files
-            let files = try FileManager.default.contentsOfDirectory(atPath: frameworkDir.path)
-            print("macOS framework files: \(files)")
-
+            let libPath = (frameworkDir + framework).path
+            // install_name_tool -id @rpath/MPVKit.framework/MPVKit $libPath
+            _ = try? Utility.launch(path: "/usr/bin/install_name_tool", arguments: ["-id", "@rpath/\(framework).framework/\(framework)", libPath])
             // Create `Resources`、 `Versions` directory for macOS framework
             try? FileManager.default.createDirectory(at: frameworkDir + "Versions", withIntermediateDirectories: true, attributes: nil)
             try? FileManager.default.createDirectory(at: frameworkDir + "Versions/A", withIntermediateDirectories: true, attributes: nil)
