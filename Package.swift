@@ -247,38 +247,38 @@ let package = Package(
 
         .binaryTarget(
             name: "Libavcodec",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavcodec.xcframework.zip",
-            checksum: "6a33a48b03e0affd7b2214efe9d4eb8eeae2e72154709c9ddd0298bc3951cc58"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/Libavcodec.xcframework.zip",
+            checksum: "5fd013e35311953b86fe10a04b5245eadc846d5629fc65476db894c22962bfac"
         ),
         .binaryTarget(
             name: "Libavdevice",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavdevice.xcframework.zip",
-            checksum: "8e6a6387ad2d28d149ebb623b6195415cfa5ba1770c0876957557cfbe80b998a"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/Libavdevice.xcframework.zip",
+            checksum: "48dcb9ab7341c215e4d057e8df3dc94ef3a08b962dece59ed05328c5308c8cbf"
         ),
         .binaryTarget(
             name: "Libavformat",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavformat.xcframework.zip",
-            checksum: "0b2cd3fa22ef69d43757b1237c1507c4e3e1a513249505ddaf4b10fb29464dab"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/Libavformat.xcframework.zip",
+            checksum: "b97ec263879e758e703006fc191b2e2a6a8d8d0d252c6772f84a69dc479aa23d"
         ),
         .binaryTarget(
             name: "Libavfilter",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavfilter.xcframework.zip",
-            checksum: "1e9aef8c2c24ff9c9278a9034c3b08209eed5f8c1f03d29544197c850c2a085d"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/Libavfilter.xcframework.zip",
+            checksum: "8fbdd2ddefaecf1605b58c9bfb03f981c4dfa1a95a10e899e36114abe585f0a9"
         ),
         .binaryTarget(
             name: "Libavutil",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libavutil.xcframework.zip",
-            checksum: "c9099ce24026cbb5547d2e6df7465f01dfb8318394dad27ed3a52b2e3a82446d"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/Libavutil.xcframework.zip",
+            checksum: "4f312e547c9ee9e8f01d84171706ac4007be4494c224e4da1fa19b78ae07d7cd"
         ),
         .binaryTarget(
             name: "Libswresample",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libswresample.xcframework.zip",
-            checksum: "ef2c861819844182ff8b4f5738a209264d126bc3d29b7ef7522a5ace6f5f6da2"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/Libswresample.xcframework.zip",
+            checksum: "4fac89123f9fef16bf44a1a887aae798d4d5f12049c17a01deb236f0767ffd01"
         ),
         .binaryTarget(
             name: "Libswscale",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libswscale.xcframework.zip",
-            checksum: "71f0d6fe031d8b2a2c594e300e9d847b9af5bdf3f8583b68a7e36b65d3ca5789"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/Libswscale.xcframework.zip",
+            checksum: "65f61f6c92b2e337a4efe0e481432e617b155f2c28425f8fdd82601d7b7b8f53"
         ),
 
         .binaryTarget(
@@ -295,14 +295,14 @@ let package = Package(
 
         .binaryTarget(
             name: "Libbluray",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/Libbluray.xcframework.zip",
-            checksum: "02bba910e9f1321f1c98bf668556157f871a6820290fafd96b9d86d95dfa6feb"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/Libbluray.xcframework.zip",
+            checksum: "61d28165cfc5119bf3bcd57a4023be294abcd2bd107d8ba641b4071f981b42e5"
         ),
 
         .binaryTarget(
             name: "MPVKit",
-            url: "https://github.com/endpne/MPVKit/releases/download/0.39.0/MPVKit.xcframework.zip",
-            checksum: "49c4402952f66cf14746bbb38938d1e054373a81b951f0d004e52bb3db6a526c"
+            url: "https://github.com/endpne/MPVKit/releases/download/0.40.0/MPVKit.xcframework.zip",
+            checksum: "a1b9d7f34f97d02c69b0a1a07d1937469d4125a255ac240af7777775641100a0"
         ),
         //AUTO_GENERATE_TARGETS_END//
     ]
