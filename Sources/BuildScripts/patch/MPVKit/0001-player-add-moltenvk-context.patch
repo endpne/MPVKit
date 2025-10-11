@@ -1,0 +1,223 @@
+diff --git a/meson.build b/meson.build
+index b7bcb1b0ba..ebba7eeb73 100644
+--- a/meson.build
++++ b/meson.build
+@@ -1310,6 +1310,17 @@ if features['vulkan'] and features['x11']
+      sources += files('video/out/vulkan/context_xlib.c')
+ endif
+ 
++if host_machine.system() == 'darwin'
++    moltenvk = get_option('moltenvk').require(
++        features['vulkan'],
++        error_message: 'vulkan or moltenvk header could not be found!',
++    )
++    features += {'moltenvk': moltenvk.allowed()}
++    if features['vulkan'] and features['moltenvk']
++        sources += files('video/out/vulkan/context_moltenvk.m')
++    endif
++endif
++
+ features += {'vk-khr-display': vulkan.type_name() == 'internal' or
+                                cc.has_function('vkCreateDisplayPlaneSurfaceKHR', prefix: '#include <vulkan/vulkan_core.h>',
+                                                dependencies: [vulkan])}
+diff --git a/meson_options.txt b/meson_options.txt
+index c6e6337d68..55fc334edf 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -103,6 +103,7 @@ option('gl-dxinterop-d3d9', type: 'feature', value: 'auto', description: 'OpenGL
+ option('ios-gl', type: 'feature', value: 'auto', description: 'iOS OpenGL ES interop support')
+ option('videotoolbox-gl', type: 'feature', value: 'auto', description: 'Videotoolbox with OpenGL')
+ option('videotoolbox-pl', type: 'feature', value: 'auto', description: 'Videotoolbox with libplacebo')
++option('moltenvk', type: 'feature', value: 'auto', description: 'Moltenvk context')
+ 
+ # macOS features
+ option('macos-10-15-4-features', type: 'feature', value: 'auto', description: 'macOS 10.15.4 SDK Features')
+diff --git a/options/options.c b/options/options.c
+index aaf7748d8d..5fcba4ae2d 100644
+--- a/options/options.c
++++ b/options/options.c
+@@ -231,6 +231,9 @@ static const m_option_t mp_vo_opt_list[] = {
+ #endif
+ #if HAVE_EGL_ANDROID
+     {"android-surface-size", OPT_SIZE_BOX(android_surface_size)},
++#endif
++#if HAVE_MOLTENVK
++    {"metal-layer-size", OPT_SIZE_BOX(metal_layer_size)},
+ #endif
+     {"swapchain-depth", OPT_INT(swapchain_depth), M_RANGE(1, VO_MAX_SWAPCHAIN_DEPTH)},
+     {"override-display-fps", OPT_REPLACED("display-fps-override")},
+diff --git a/options/options.h b/options/options.h
+index 9bed9ca291..da53445294 100644
+--- a/options/options.h
++++ b/options/options.h
+@@ -83,6 +83,8 @@ typedef struct mp_vo_opts {
+ 
+     struct m_geometry android_surface_size;
+ 
++    struct m_geometry metal_layer_size;
++
+     int swapchain_depth;  // max number of images to render ahead
+ 
+     struct m_geometry video_crop;
+diff --git a/player/command.c b/player/command.c
+index 6891f4e70f..a5171eb0c7 100644
+--- a/player/command.c
++++ b/player/command.c
+@@ -7446,7 +7446,7 @@ void mp_option_change_callback(void *ctx, struct m_config_option *co, int flags,
+         }
+     }
+ 
+-    if (opt_ptr == &opts->vo->android_surface_size) {
++    if (opt_ptr == &opts->vo->android_surface_size || opt_ptr == &opts->vo->metal_layer_size) {
+         if (mpctx->video_out)
+             vo_control(mpctx->video_out, VOCTRL_EXTERNAL_RESIZE, NULL);
+     }
+diff --git a/video/out/gpu/context.c b/video/out/gpu/context.c
+index 621ebe86eb..3ed5d1895d 100644
+--- a/video/out/gpu/context.c
++++ b/video/out/gpu/context.c
+@@ -50,6 +50,7 @@ extern const struct ra_ctx_fns ra_ctx_vulkan_xlib;
+ extern const struct ra_ctx_fns ra_ctx_vulkan_android;
+ extern const struct ra_ctx_fns ra_ctx_vulkan_display;
+ extern const struct ra_ctx_fns ra_ctx_vulkan_mac;
++extern const struct ra_ctx_fns ra_ctx_vulkan_moltenvk;
+ 
+ /* Direct3D 11 */
+ extern const struct ra_ctx_fns ra_ctx_d3d11;
+@@ -110,7 +111,9 @@ static const struct ra_ctx_fns *contexts[] = {
+ 
+ // Vulkan contexts:
+ #if HAVE_VULKAN
+-
++#if HAVE_MOLTENVK
++     &ra_ctx_vulkan_moltenvk,
++#endif
+ #if HAVE_ANDROID
+     &ra_ctx_vulkan_android,
+ #endif
+diff --git a/video/out/vulkan/common.h b/video/out/vulkan/common.h
+index e75cb228f8..662ab2fed8 100644
+--- a/video/out/vulkan/common.h
++++ b/video/out/vulkan/common.h
+@@ -22,7 +22,10 @@
+ #if HAVE_WIN32_DESKTOP
+ #define VK_USE_PLATFORM_WIN32_KHR
+ #endif
+-#if HAVE_COCOA
++#if HAVE_MOLTENVK
++#include <MoltenVK/mvk_vulkan.h>
++#endif
++#if HAVE_COCOA && !defined(VK_USE_PLATFORM_METAL_EXT)
+ #define VK_USE_PLATFORM_METAL_EXT
+ #endif
+ 
+diff --git a/video/out/vulkan/context_moltenvk.m b/video/out/vulkan/context_moltenvk.m
+new file mode 100644
+index 0000000000..d09d8ad9dd
+--- /dev/null
++++ b/video/out/vulkan/context_moltenvk.m
+@@ -0,0 +1,104 @@
++/*
++ * This file is part of mpv.
++ *
++ * mpv is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU Lesser General Public
++ * License as published by the Free Software Foundation; either
++ * version 2.1 of the License, or (at your option) any later version.
++ *
++ * mpv is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU Lesser General Public License for more details.
++ *
++ * You should have received a copy of the GNU Lesser General Public
++ * License along with mpv.  If not, see <http://www.gnu.org/licenses/>.
++ */
++
++#include <CoreGraphics/CoreGraphics.h>
++#include <QuartzCore/CAMetalLayer.h>
++#include <MoltenVK/mvk_vulkan.h>
++
++#include "common.h"
++#include "context.h"
++#include "utils.h"
++
++struct priv {
++    struct mpvk_ctx vk;
++    CAMetalLayer *layer;
++};
++
++static void moltenvk_uninit(struct ra_ctx *ctx)
++{
++    struct priv *p = ctx->priv;
++    ra_vk_ctx_uninit(ctx);
++    mpvk_uninit(&p->vk);
++}
++
++static bool moltenvk_init(struct ra_ctx *ctx)
++{
++    struct priv *p = ctx->priv = talloc_zero(ctx, struct priv);
++    struct mpvk_ctx *vk = &p->vk;
++    int msgl = ctx->opts.probing ? MSGL_V : MSGL_ERR;
++
++    if (ctx->vo->opts->WinID == -1) {
++        MP_MSG(ctx, msgl, "WinID missing\n");
++        goto fail;
++    }
++
++    if (!mpvk_init(vk, ctx, VK_EXT_METAL_SURFACE_EXTENSION_NAME))
++        goto fail;
++
++    p->layer = (__bridge CAMetalLayer *)(intptr_t)ctx->vo->opts->WinID;
++    VkMetalSurfaceCreateInfoEXT info = {
++         .sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT,
++         .pLayer = p->layer,
++    };
++
++    struct ra_vk_ctx_params params = {0};
++
++    VkInstance inst = vk->vkinst->instance;
++    VkResult res = vkCreateMetalSurfaceEXT(inst, &info, NULL, &vk->surface);
++    if (res != VK_SUCCESS) {
++        MP_MSG(ctx, msgl, "Failed creating MoltenVK surface\n");
++        goto fail;
++    }
++
++    if (!ra_vk_ctx_init(ctx, vk, params, VK_PRESENT_MODE_FIFO_KHR))
++        goto fail;
++
++    return true;
++fail:
++    moltenvk_uninit(ctx);
++    return false;
++}
++
++static bool moltenvk_reconfig(struct ra_ctx *ctx)
++{
++    struct m_geometry new_size = ctx->vo->opts->metal_layer_size;
++    if (new_size.w > 0 && new_size.h > 0) {
++        struct priv *p = ctx->priv;
++        CGSize s = CGSizeMake(new_size.w, new_size.h);
++        ra_vk_ctx_resize(ctx, s.width, s.height);
++        p->layer.drawableSize = CGSizeMake(s.width, s.height);
++    } else {
++        struct priv *p = ctx->priv;
++        CGSize s = p->layer.drawableSize;
++        ra_vk_ctx_resize(ctx, s.width, s.height);
++    }
++    return true;
++}
++
++static int moltenvk_control(struct ra_ctx *ctx, int *events, int request, void *arg)
++{
++    return VO_NOTIMPL;
++}
++
++const struct ra_ctx_fns ra_ctx_vulkan_moltenvk = {
++    .type           = "vulkan",
++    .name           = "moltenvk",
++    .reconfig       = moltenvk_reconfig,
++    .control        = moltenvk_control,
++    .init           = moltenvk_init,
++    .uninit         = moltenvk_uninit,
++};

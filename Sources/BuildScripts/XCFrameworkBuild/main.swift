@@ -34,7 +34,8 @@ do {
     try BuildUchardet().buildALL()
     try BuildLuaJIT().buildALL()
     try BuildBluray().buildALL()
-    try BuildMPV().buildALL()
+    // try BuildMPV().buildALL()
+    try BuildMPVKit().buildALL()
 } catch {
     print(error.localizedDescription)
     exit(1)
@@ -42,9 +43,11 @@ do {
 
 
 enum Library: String, CaseIterable {
-    case libmpv, FFmpeg, libshaderc, vulkan, lcms2, libdovi, openssl, libunibreak, libfreetype, libfribidi, libharfbuzz, libass, libsmbclient, libplacebo, libdav1d, gmp, nettle, gnutls, libuchardet, libbluray, libluajit, libuavs3d
+    case libmpv, MPVKit, FFmpeg, libshaderc, vulkan, lcms2, libdovi, openssl, libunibreak, libfreetype, libfribidi, libharfbuzz, libass, libsmbclient, libplacebo, libdav1d, gmp, nettle, gnutls, libuchardet, libbluray, libluajit, libuavs3d
     var version: String {
         switch self {
+        case .MPVKit:
+            return "v0.39.0"
         case .libmpv:
             return "v0.39.0"
         case .FFmpeg:
@@ -94,6 +97,8 @@ enum Library: String, CaseIterable {
 
     var url: String {
         switch self {
+        case .MPVKit:
+            return "https://github.com/mpv-player/mpv"
         case .libmpv:
             return "https://github.com/mpv-player/mpv"
         case .FFmpeg:
@@ -144,6 +149,14 @@ enum Library: String, CaseIterable {
     // for generate Package.swift
     var targets : [PackageTarget] {
         switch self {
+        case .MPVKit:
+            return [
+                .target(
+                    name: "MPVKit",
+                    url: "https://github.com/endpne/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/MPVKit.xcframework.zip",
+                    checksum: ""
+                ),
+            ]
         case .libmpv:
             return [
                 .target(
@@ -437,6 +450,77 @@ private class BuildMPV: BaseBuild {
 
 }
 
+private class BuildMPVKit: BaseBuild {
+    init() {
+        super.init(library: .MPVKit)
+    }
+
+    override func flagsDependencelibrarys() -> [Library] {
+        if BaseBuild.options.enableGPL {
+            return [.gmp, .libsmbclient]
+        } else {
+            return [.gmp]
+        }
+    }
+
+
+    override func arguments(platform: PlatformType, arch: ArchType) -> [String] {
+        var array = [
+            "-Dlibmpv=true",
+            "-Dgl=enabled",
+            "-Dplain-gl=enabled",
+            "-Diconv=enabled",
+            "-Duchardet=enabled",
+            "-Dvulkan=enabled",
+            "-Dmoltenvk=enabled",  // from patch option
+
+            "-Djavascript=disabled",
+            "-Dzimg=disabled",
+            "-Djpeg=disabled",
+            "-Dvapoursynth=disabled",
+            "-Drubberband=disabled",
+        ]
+        if BaseBuild.options.enableGPL {
+            array.append("-Dgpl=true")
+        } else {
+            array.append("-Dgpl=false")
+        }
+        let blurayLibPath = URL.currentDirectory + [Library.libbluray.rawValue, platform.rawValue, "thin", arch.rawValue]
+        if FileManager.default.fileExists(atPath: blurayLibPath.path) {
+            array.append("-Dlibbluray=enabled")
+        } else {
+            array.append("-Dlibbluray=disabled")
+        }
+        if !(platform == .macos && arch.executable) {
+            array.append("-Dcplayer=false")
+        }
+        if platform == .macos {
+            array.append("-Dswift-flags=-sdk \(platform.isysroot) -target \(platform.deploymentTarget(arch))")
+            array.append("-Dcocoa=enabled")
+            array.append("-Dcoreaudio=enabled")
+            array.append("-Davfoundation=enabled")
+            array.append("-Dgl-cocoa=enabled")
+            array.append("-Dvideotoolbox-gl=enabled")
+            array.append("-Dlua=luajit")  // macos show video stats need enable 
+        } else {
+            array.append("-Dvideotoolbox-gl=disabled")
+            array.append("-Dswift-build=disabled")
+            array.append("-Daudiounit=enabled")
+            array.append("-Davfoundation=disabled")
+            array.append("-Dlua=disabled")
+            if platform == .maccatalyst {
+                array.append("-Dcocoa=disabled")
+                array.append("-Dcoreaudio=disabled")
+            } else if platform == .xros || platform == .xrsimulator {
+                array.append("-Dios-gl=disabled")
+            } else {
+                array.append("-Dios-gl=enabled")
+            }
+        }
+        return array
+    }
+
+}
 
 private class BuildFFMPEG: BaseBuild {
     init() {

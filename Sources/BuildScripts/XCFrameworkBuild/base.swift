@@ -300,7 +300,7 @@ class BaseBuild {
                 ldFlags.append("-l\(libname)")
             }
         }
-        if library == .libmpv {
+        if library == .MPVKit {
             let exportSymbols = directoryURL + "(library.rawValue).exports"
             if FileManager.default.fileExists(atPath: exportSymbols.path) {
                 print("link with -exported_symbols_list \(exportSymbols.path)")
@@ -411,7 +411,10 @@ class BaseBuild {
             if !FileManager.default.fileExists(atPath: prefix.path) {
                 return nil
             }
-            let libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") ? framework : "lib" + framework
+            var libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") || framework == "MPVKit" ? framework : "lib" + framework
+            if libname == "MPVKit" {
+                libname = "libmpv"
+            }
             var libPath = prefix + ["lib", "\(libname).a"]
             if !FileManager.default.fileExists(atPath: libPath.path) {
                 libPath = prefix + ["lib", "\(libname).dylib"]
@@ -534,7 +537,7 @@ class BaseBuild {
         let url = scratch(platform: platform, arch: arch)
         let crossFile = url + "crossFile.meson"
         var libType = "static"
-        if library == .libmpv {
+        if library == .MPVKit {
             libType = "shared"
         }
         let prefix = thinDir(platform: platform, arch: arch)
