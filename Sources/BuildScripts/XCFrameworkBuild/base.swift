@@ -309,7 +309,6 @@ class BaseBuild {
                 let content = """
                 _mpv_*
                 _libmpv_*
-                _OBJC_CLASS_*
                 """.data(using: .utf8)
                 FileManager.default.createFile(atPath: exportSymbols.path, contents: content, attributes: nil)
                 print("link with -exported_symbols_list \(exportSymbols.path) (empty file created)")
