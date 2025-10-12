@@ -1,8 +1,8 @@
 diff --git a/meson.build b/meson.build
-index b7bcb1b0ba..ebba7eeb73 100644
+index 7572769e0e..e6109987a3 100644
 --- a/meson.build
 +++ b/meson.build
-@@ -1310,6 +1310,17 @@ if features['vulkan'] and features['x11']
+@@ -1315,6 +1315,17 @@ if features['vulkan'] and features['x11']
       sources += files('video/out/vulkan/context_xlib.c')
  endif
  
@@ -20,11 +20,11 @@ index b7bcb1b0ba..ebba7eeb73 100644
  features += {'vk-khr-display': vulkan.type_name() == 'internal' or
                                 cc.has_function('vkCreateDisplayPlaneSurfaceKHR', prefix: '#include <vulkan/vulkan_core.h>',
                                                 dependencies: [vulkan])}
-diff --git a/meson_options.txt b/meson_options.txt
-index c6e6337d68..55fc334edf 100644
---- a/meson_options.txt
-+++ b/meson_options.txt
-@@ -103,6 +103,7 @@ option('gl-dxinterop-d3d9', type: 'feature', value: 'auto', description: 'OpenGL
+diff --git a/meson.options b/meson.options
+index dae0a333ef..6ed28af20a 100644
+--- a/meson.options
++++ b/meson.options
+@@ -101,6 +101,7 @@ option('gl-dxinterop-d3d9', type: 'feature', value: 'auto', description: 'OpenGL
  option('ios-gl', type: 'feature', value: 'auto', description: 'iOS OpenGL ES interop support')
  option('videotoolbox-gl', type: 'feature', value: 'auto', description: 'Videotoolbox with OpenGL')
  option('videotoolbox-pl', type: 'feature', value: 'auto', description: 'Videotoolbox with libplacebo')
@@ -33,10 +33,10 @@ index c6e6337d68..55fc334edf 100644
  # macOS features
  option('macos-10-15-4-features', type: 'feature', value: 'auto', description: 'macOS 10.15.4 SDK Features')
 diff --git a/options/options.c b/options/options.c
-index aaf7748d8d..5fcba4ae2d 100644
+index f6fc928211..eb7cae825a 100644
 --- a/options/options.c
 +++ b/options/options.c
-@@ -231,6 +231,9 @@ static const m_option_t mp_vo_opt_list[] = {
+@@ -242,6 +242,9 @@ static const m_option_t mp_vo_opt_list[] = {
  #endif
  #if HAVE_EGL_ANDROID
      {"android-surface-size", OPT_SIZE_BOX(android_surface_size)},
@@ -47,10 +47,10 @@ index aaf7748d8d..5fcba4ae2d 100644
      {"swapchain-depth", OPT_INT(swapchain_depth), M_RANGE(1, VO_MAX_SWAPCHAIN_DEPTH)},
      {"override-display-fps", OPT_REPLACED("display-fps-override")},
 diff --git a/options/options.h b/options/options.h
-index 9bed9ca291..da53445294 100644
+index 487e7d4a7d..e57eb5003c 100644
 --- a/options/options.h
 +++ b/options/options.h
-@@ -83,6 +83,8 @@ typedef struct mp_vo_opts {
+@@ -86,6 +86,8 @@ typedef struct mp_vo_opts {
  
      struct m_geometry android_surface_size;
  
@@ -60,11 +60,11 @@ index 9bed9ca291..da53445294 100644
  
      struct m_geometry video_crop;
 diff --git a/player/command.c b/player/command.c
-index 6891f4e70f..a5171eb0c7 100644
+index 2baad02855..f3a5d33d14 100644
 --- a/player/command.c
 +++ b/player/command.c
-@@ -7446,7 +7446,7 @@ void mp_option_change_callback(void *ctx, struct m_config_option *co, int flags,
-         }
+@@ -7890,7 +7890,7 @@ void mp_option_run_callback(struct MPContext *mpctx, struct mp_option_callback *
+             queue_seek(mpctx, MPSEEK_RELATIVE, 0.0, MPSEEK_EXACT, 0);
      }
  
 -    if (opt_ptr == &opts->vo->android_surface_size) {
@@ -73,7 +73,7 @@ index 6891f4e70f..a5171eb0c7 100644
              vo_control(mpctx->video_out, VOCTRL_EXTERNAL_RESIZE, NULL);
      }
 diff --git a/video/out/gpu/context.c b/video/out/gpu/context.c
-index 621ebe86eb..3ed5d1895d 100644
+index 75dd804005..4ab72a00b3 100644
 --- a/video/out/gpu/context.c
 +++ b/video/out/gpu/context.c
 @@ -50,6 +50,7 @@ extern const struct ra_ctx_fns ra_ctx_vulkan_xlib;
@@ -84,11 +84,10 @@ index 621ebe86eb..3ed5d1895d 100644
  
  /* Direct3D 11 */
  extern const struct ra_ctx_fns ra_ctx_d3d11;
-@@ -110,7 +111,9 @@ static const struct ra_ctx_fns *contexts[] = {
+@@ -126,6 +127,9 @@ static const struct ra_ctx_fns *contexts[] = {
  
- // Vulkan contexts:
+ // Vulkan contexts (fallbacks):
  #if HAVE_VULKAN
--
 +#if HAVE_MOLTENVK
 +     &ra_ctx_vulkan_moltenvk,
 +#endif
@@ -113,7 +112,7 @@ index e75cb228f8..662ab2fed8 100644
  
 diff --git a/video/out/vulkan/context_moltenvk.m b/video/out/vulkan/context_moltenvk.m
 new file mode 100644
-index 0000000000..d09d8ad9dd
+index 0000000000..110d73915a
 --- /dev/null
 +++ b/video/out/vulkan/context_moltenvk.m
 @@ -0,0 +1,104 @@
