@@ -927,7 +927,7 @@ enum PlatformType: String, CaseIterable {
         case .ios, .xros:
             return [.arm64]
         case .tvos:
-            return [.arm64, .arm64e]
+            return [.arm64]
         case .xrsimulator:
             return [.arm64]
         case .isimulator, .tvsimulator:
