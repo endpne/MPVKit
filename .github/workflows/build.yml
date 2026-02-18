@@ -15,6 +15,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout patch
+        uses: actions/checkout@v4
+        with:
+            repository: endpne/patch
+            ref: 'main'
+            token: ${{ secrets.REPO_TOKEN }}
+            submodules: recursive
+            path: patch-repo
+
+      - name: Apply patch
+        run: |
+          rm -rf Sources/BuildScripts/patch/MPVKit/*.patch
+          cp patch-repo/*.patch Sources/BuildScripts/patch/MPVKit/
+          rm -rf Sources/BuildScripts/patch/libmpv/*.patch
+          cp patch-repo/*.patch Sources/BuildScripts/patch/libmpv/
+
       - name: Check version to release
         uses: jannekem/run-python-script-action@v1
         with:

@@ -4,6 +4,9 @@ do {
     let options = try ArgumentOptions.parse(CommandLine.arguments)
     try Build.performCommand(options)
 
+    // spirv-cross
+    try BuildSpirvCross().buildALL()
+
     // SSL
     try BuildOpenSSL().buildALL()
     try BuildGmp().buildALL()
@@ -34,7 +37,7 @@ do {
     try BuildUchardet().buildALL()
     try BuildLuaJIT().buildALL()
     try BuildBluray().buildALL()
-    // try BuildMPV().buildALL()
+    try BuildMPV().buildALL()
     try BuildMPVKit().buildALL()
 } catch {
     print(error.localizedDescription)
@@ -43,7 +46,7 @@ do {
 
 
 enum Library: String, CaseIterable {
-    case libmpv, MPVKit, FFmpeg, libshaderc, vulkan, lcms2, libdovi, openssl, libunibreak, libfreetype, libfribidi, libharfbuzz, libass, libsmbclient, libplacebo, libdav1d, gmp, nettle, gnutls, libuchardet, libbluray, libluajit, libuavs3d
+    case libmpv, MPVKit, FFmpeg, libshaderc, vulkan, lcms2, libdovi, openssl, libunibreak, libfreetype, libfribidi, libharfbuzz, libass, libsmbclient, libplacebo, libdav1d, gmp, nettle, gnutls, libuchardet, libbluray, libluajit, libuavs3d, libspirv_cross
     var version: String {
         switch self {
         case .MPVKit:
@@ -92,6 +95,8 @@ enum Library: String, CaseIterable {
             return "2.1.0"
         case .libuavs3d:
             return "1.2.1"
+        case .libspirv_cross:
+            return "1.4.309"
         }
     }
 
@@ -143,6 +148,8 @@ enum Library: String, CaseIterable {
             return "https://github.com/endpne/libluajit-build/releases/download/\(self.version)/libluajit-all.zip"
         case .libuavs3d:
             return "https://github.com/endpne/libuavs3d-build/releases/download/\(self.version)/libuavs3d-all.zip"
+        case .libspirv_cross:
+            return "https://github.com/endpne/libspirv-cross-build/releases/download/\(self.version)/libspirv_cross-all.zip"
         }
     }
 
@@ -373,6 +380,14 @@ enum Library: String, CaseIterable {
                     checksum: "https://github.com/endpne/libuavs3d-build/releases/download/\(self.version)/Libuavs3d.xcframework.checksum.txt"
                 ),
             ]
+        case .libspirv_cross:
+            return [
+                .target(
+                    name: "Libspirv_cross",
+                    url: "https://github.com/endpne/libspirv-cross-build/releases/download/\(self.version)/Libspirv_cross.xcframework.zip",
+                    checksum: "https://github.com/endpne/libspirv-cross-build/releases/download/\(self.version)/Libspirv_cross.xcframework.checksum.txt"
+                ),
+            ]
         }
     }
 }
@@ -384,11 +399,11 @@ private class BuildMPV: BaseBuild {
     }
 
     override func flagsDependencelibrarys() -> [Library] {
+        var libs: [Library] = [.gmp]
         if BaseBuild.options.enableGPL {
-            return [.gmp, .libsmbclient]
-        } else {
-            return [.gmp]
+            libs.append(.libsmbclient)
         }
+        return libs
     }
 
 
@@ -400,7 +415,10 @@ private class BuildMPV: BaseBuild {
             "-Diconv=enabled",
             "-Duchardet=enabled",
             "-Dvulkan=enabled",
+            "-Dmetal=enabled",
             "-Dmoltenvk=enabled",  // from patch option
+            "-Dshaderc=enabled",
+            "-Dspirv-cross=enabled",
 
             "-Djavascript=disabled",
             "-Dzimg=disabled",
@@ -456,11 +474,11 @@ private class BuildMPVKit: BaseBuild {
     }
 
     override func flagsDependencelibrarys() -> [Library] {
+        var libs: [Library] = [.gmp]
         if BaseBuild.options.enableGPL {
-            return [.gmp, .libsmbclient]
-        } else {
-            return [.gmp]
+            libs.append(.libsmbclient)
         }
+        return libs
     }
 
 
@@ -472,7 +490,10 @@ private class BuildMPVKit: BaseBuild {
             "-Diconv=enabled",
             "-Duchardet=enabled",
             "-Dvulkan=enabled",
+            "-Dmetal=enabled",
             "-Dmoltenvk=enabled",  // from patch option
+            "-Dshaderc=enabled",
+            "-Dspirv-cross=enabled",
 
             "-Djavascript=disabled",
             "-Dzimg=disabled",
@@ -835,6 +856,11 @@ private class BuildFFMPEG: BaseBuild {
 }
 
 
+private class BuildSpirvCross: ZipBaseBuild {
+    init() {
+        super.init(library: .libspirv_cross)
+    }
+}
 
 
 // depend openssl, ffmpeg, freetype
