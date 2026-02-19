@@ -33,12 +33,12 @@ do {
     try BuildDav1d().buildALL()
     try BuildFFMPEG().buildALL()
 
-    // mpv
-    try BuildUchardet().buildALL()
-    try BuildLuaJIT().buildALL()
-    try BuildBluray().buildALL()
-    try BuildMPV().buildALL()
-    try BuildMPVKit().buildALL()
+    // // mpv
+    // try BuildUchardet().buildALL()
+    // try BuildLuaJIT().buildALL()
+    // try BuildBluray().buildALL()
+    // try BuildMPV().buildALL()
+    // try BuildMPVKit().buildALL()
 } catch {
     print(error.localizedDescription)
     exit(1)
@@ -624,6 +624,9 @@ private class BuildFFMPEG: BaseBuild {
                     }
                 }
             }
+        }
+        if (frameworks.isEmpty) {
+            return [self.library.rawValue]
         }
         return frameworks
     }

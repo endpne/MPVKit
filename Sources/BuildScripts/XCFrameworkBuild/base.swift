@@ -163,7 +163,7 @@ class BaseBuild {
     }
 
     func build(platform: PlatformType, arch: ArchType) throws {
-        let buildURL = scratch(platform: platform, arch: arch)
+        let buildURL: URL = scratch(platform: platform, arch: arch)
         try? FileManager.default.createDirectory(at: buildURL, withIntermediateDirectories: true, attributes: nil)
         let environ = environment(platform: platform, arch: arch)
         if FileManager.default.fileExists(atPath: (directoryURL + "meson.build").path) {
@@ -191,6 +191,11 @@ class BaseBuild {
             try configure(buildURL: buildURL, environ: environ, platform: platform, arch: arch)
             try Utility.launch(path: "/usr/bin/make", arguments: ["-j8"], currentDirectoryURL: buildURL, environment: environ)
             try Utility.launch(path: "/usr/bin/make", arguments: ["-j8", "install"], currentDirectoryURL: buildURL, environment: environ)
+        }
+
+        // 👇 新增：如果是编译 FFmpeg，就执行我们的 dummy.c 魔法打成动态库
+        if library == .FFmpeg {
+            try mergeFFmpegDynamicLibs(platform: platform, arch: arch)
         }
     }
 
@@ -286,6 +291,164 @@ class BaseBuild {
         return cFlags
     }
 
+    func mergeFFmpegDynamicLibs(platform: PlatformType, arch: ArchType) throws {
+        let libDir = thinDir(platform: platform, arch: arch) + "lib"
+        let outputLibPath = libDir + "libFFmpeg.dylib" 
+        
+        // 1. 收集 FFmpeg 自己的散装静态库
+        let ffmpegLibs = [
+            "libavcodec.a", "libavdevice.a", "libavfilter.a", 
+            "libavformat.a", "libavutil.a", "libswresample.a", "libswscale.a",
+            "libpostproc.a"
+        ]
+        var ffmpegLibsPaths: [String] = []
+        for libName in ffmpegLibs {
+            let path = libDir + libName
+            if FileManager.default.fileExists(atPath: path.path) {
+                ffmpegLibsPaths.append(path.path)
+            }
+        }
+        if ffmpegLibsPaths.isEmpty { return }
+        
+        // 2. 收集第三方依赖库
+        var thirdPartyLibsPaths: [String] = []
+        let distDir = URL.currentDirectory 
+        if let modules = try? FileManager.default.contentsOfDirectory(atPath: distDir.path) {
+            for moduleName in modules {
+                if moduleName.lowercased().contains("ffmpeg") { continue }
+                let depLibDir = distDir + [moduleName, platform.rawValue, "thin", arch.rawValue, "lib"]
+                if FileManager.default.fileExists(atPath: depLibDir.path) {
+                    let depLibs = Utility.listAllFiles(in: depLibDir).filter { $0.path.hasSuffix(".a") }
+                    for lib in depLibs {
+                        if !thirdPartyLibsPaths.contains(lib.path) { thirdPartyLibsPaths.append(lib.path) }
+                    }
+                }
+            }
+        }
+        
+        try? FileManager.default.removeItem(at: outputLibPath)
+        
+       // ====================================================================
+        // 🔥 核心魔法：自动生成 dummy.c 强行引用所有公开符号！
+        // ====================================================================
+        print("🚀 [Debug] 正在提取符号以生成 dummy.c ...")
+        var allSymbols = Set<String>()
+        let nmOutputFile = libDir + "nm_output.txt"
+        
+        for path in ffmpegLibsPaths {
+            // 👇 强制重定向输出到文件，绕过 isOutput 无返回值的问题
+            let cmd = "/usr/bin/nm -gUj \(path) > \(nmOutputFile.path)"
+            Utility.shell(cmd, isOutput: false)
+            
+            if let output = try? String(contentsOf: nmOutputFile, encoding: .utf8) {
+                let lines = output.components(separatedBy: .newlines)
+                for line in lines {
+                    let sym = line.trimmingCharacters(in: .whitespaces)
+                    // 过滤合法的 API，同时抛弃包含点号的非法汇编符号
+                    if (sym.hasPrefix("_av") || sym.hasPrefix("_sws") || sym.hasPrefix("_swr") || sym.hasPrefix("_postproc")) && !sym.contains(".") {
+                        let cSym = String(sym.dropFirst())
+                        allSymbols.insert(cSym)
+                    }
+                }
+            }
+        }
+        try? FileManager.default.removeItem(at: nmOutputFile)
+        
+        let dummyCPath = libDir + "dummy.c"
+        let dummyObjPath = libDir + "dummy.o"
+        
+        var dummyContent = "/* Auto-generated dummy file to force symbol resolution */\n"
+        for sym in allSymbols {
+            dummyContent += "extern void \(sym)(void);\n"
+        }
+        dummyContent += "\nvoid* __ffmpeg_force_load_array[] = {\n"
+        for sym in allSymbols {
+            dummyContent += "    (void*)\(sym),\n"
+        }
+        dummyContent += "};\n"
+        
+        try! dummyContent.write(toFile: dummyCPath.path, atomically: true, encoding: .utf8)
+        
+        print("🚀 [Debug] 编译 dummy.c (\(allSymbols.count) 个符号) ...")
+        try Utility.launch(path: "/usr/bin/clang", arguments: [
+            "-c", "-arch", arch.rawValue, "-isysroot", platform.isysroot,
+            "-target", platform.deploymentTarget(arch),
+            dummyCPath.path, "-o", dummyObjPath.path
+        ])
+        // ==================================================================== 
+
+        let flags = ldFlags(platform: platform, arch: arch)
+        var systemDependencies = [
+            "-framework", "AudioToolbox", "-framework", "CoreMedia", "-framework", "CoreVideo",
+            "-framework", "VideoToolbox", "-framework", "CoreFoundation", "-framework", "CoreGraphics",
+            "-framework", "Foundation", "-framework", "IOSurface", "-framework", "Metal",
+            "-framework", "QuartzCore", 
+            "-framework", "Security",
+            "-framework", "CoreText",
+            "-framework", "CoreGraphics",
+            "-lz", "-lxml2", "-liconv", "-lc++", "-lresolv"
+        ]
+
+        if platform == .macos {
+            // macOS 专有 UI 框架
+            systemDependencies.append(contentsOf: [
+                "-framework", "AppKit", 
+                "-framework", "Cocoa",
+                "-framework", "ApplicationServices", 
+            ])
+        } else {
+            // iOS, tvOS, visionOS (xros), maccatalyst 专有 UI 框架
+            systemDependencies.append(contentsOf: [
+                "-framework", "UIKit",
+            ])
+        }
+
+        if platform != .tvos && platform != .tvsimulator {
+            systemDependencies.append(contentsOf: [
+                "-framework", "IOKit",
+            ])
+        }
+
+        // 👇 新增：在这里生成白名单，仅供合成 Dylib 时使用！
+        let exportSymbols = directoryURL + "FFmpeg.exports"
+        let content = """
+        _av*
+        _swr*
+        _sws*
+        _swscale*
+        _swresample*
+        _postproc*
+        ___ffmpeg_force_load_array
+        """.data(using: .utf8)
+        FileManager.default.createFile(atPath: exportSymbols.path, contents: content, attributes: nil)
+
+        var arguments = [
+            "-dynamiclib", "-arch", arch.rawValue, "-isysroot", platform.isysroot,
+            "-target", platform.deploymentTarget(arch), "-o", outputLibPath.path,
+            // 👇 将白名单指令直接硬编码在合成环节
+            "-Wl,-exported_symbols_list", exportSymbols.path,
+            "-Wl,-x"
+        ]
+        
+        // 组装：把编译好的 dummy.o 塞给链接器，替代了之前会报错的 -force_load！
+        arguments.append(dummyObjPath.path)
+        arguments.append(contentsOf: ffmpegLibsPaths)
+        arguments.append(contentsOf: thirdPartyLibsPaths)
+        arguments.append(contentsOf: flags)
+        arguments.append(contentsOf: systemDependencies)
+        
+        print("🚀 [Debug] Linking libFFmpeg.dylib for \(arch.rawValue) via dummy.o ...")
+        try Utility.launch(path: "/usr/bin/clang", arguments: arguments)
+        
+        // 清理临时文件和散装库
+        try? FileManager.default.removeItem(at: dummyCPath)
+        try? FileManager.default.removeItem(at: dummyObjPath)
+        for libName in ffmpegLibs {
+            let path = libDir + libName
+            try? FileManager.default.removeItem(at: path)
+        }
+    }
+
     func ldFlags(platform: PlatformType, arch: ArchType) -> [String] {
         var ldFlags = platform.ldFlags(arch: arch)
         let librarys = flagsDependencelibrarys()
@@ -299,23 +462,6 @@ class BaseBuild {
                 ldFlags.append("-L\(path.path)/lib")
                 ldFlags.append("-l\(libname)")
             }
-        }
-        if library == .MPVKit {
-            let exportSymbols = directoryURL + "(library.rawValue).exports"
-            if FileManager.default.fileExists(atPath: exportSymbols.path) {
-                print("link with -exported_symbols_list \(exportSymbols.path)")
-            } else {
-                // create empty file
-                let content = """
-                _mpv_*
-                _libmpv_*
-                """.data(using: .utf8)
-                FileManager.default.createFile(atPath: exportSymbols.path, contents: content, attributes: nil)
-                print("link with -exported_symbols_list \(exportSymbols.path) (empty file created)")
-            }
-            ldFlags.append("-Wl,-exported_symbols_list")
-            ldFlags.append(exportSymbols.path)
-            ldFlags.append("-Wl,-x")
         }
         return ldFlags
     }
@@ -429,9 +575,27 @@ class BaseBuild {
         arguments.append((frameworkDir + framework).path)
         try Utility.launch(path: "/usr/bin/lipo", arguments: arguments)
         try FileManager.default.createDirectory(at: frameworkDir + "Modules", withIntermediateDirectories: true, attributes: nil)
+        // 👇 新增：为框架生成标准的 Umbrella Header (伞头文件)
+        let umbrellaHeaderPath = frameworkDir.path + "/Headers/\(framework).h"
+        var umbrellaContent = "// Auto-generated Umbrella Header for \(framework)\n"
+        if framework.contains("FFmpeg") {
+            // 将 FFmpeg 的子模块头文件统统包含进来
+            umbrellaContent += """
+            #import <\(framework)/libavcodec/avcodec.h>
+            #import <\(framework)/libavdevice/avdevice.h>
+            #import <\(framework)/libavfilter/avfilter.h>
+            #import <\(framework)/libavformat/avformat.h>
+            #import <\(framework)/libavutil/avutil.h>
+            #import <\(framework)/libswresample/swresample.h>
+            #import <\(framework)/libswscale/swscale.h>
+            """
+        }
+        FileManager.default.createFile(atPath: umbrellaHeaderPath, contents: umbrellaContent.data(using: .utf8), attributes: nil)
+
+        // 👇 修改：更新 modulemap，使用具体的 umbrella header 替代容易迷路的 umbrella "."
         var modulemap = """
         framework module \(framework) [system] {
-            umbrella "."
+            umbrella header "\(framework).h"
 
         """
         frameworkExcludeHeaders(framework).forEach { header in
@@ -442,11 +606,12 @@ class BaseBuild {
         }
         modulemap += """
             export *
+            module * { export * }
         }
         """
         FileManager.default.createFile(atPath: frameworkDir.path + "/Modules/module.modulemap", contents: modulemap.data(using: .utf8), attributes: nil)
         createPlist(path: frameworkDir.path + "/Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
-        if library == .MPVKit {
+        if library == .MPVKit || library == .FFmpeg {
             let libPath = (frameworkDir + framework).path
             _ = try? Utility.launch(path: "/usr/bin/install_name_tool", arguments: ["-id", "@rpath/\(framework).framework/\(framework)", libPath])
         }
@@ -469,6 +634,10 @@ class BaseBuild {
             try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Resources", withDestinationPath: "Versions/Current/Resources")
             try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/\(framework)", withDestinationPath: "Versions/Current/\(framework)")
         }
+
+        // 👇 终极护航：给框架打上基础的 Ad-Hoc 签名，彻底解决 Xcode 签名报错！
+        print("✍️ [Debug] 给 \(framework) 添加本地 Ad-Hoc 签名...")
+        _ = try? Utility.launch(path: "/usr/bin/codesign", arguments: ["--force", "--sign", "-", "--timestamp=none", frameworkDir.path])
         return frameworkDir.path
     }
 
@@ -537,7 +706,7 @@ class BaseBuild {
         let url = scratch(platform: platform, arch: arch)
         let crossFile = url + "crossFile.meson"
         var libType = "static"
-        if library == .MPVKit {
+        if library == .MPVKit || library == .FFmpeg {
             libType = "shared"
         }
         let prefix = thinDir(platform: platform, arch: arch)
