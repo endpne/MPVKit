@@ -157,40 +157,10 @@ enum Library: String, CaseIterable {
         case .FFmpeg:
             return  [
                 .target(
-                    name: "Libavcodec",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavcodec.xcframework.zip",
-                    checksum: ""
-                ),
-                .target(
-                    name: "Libavdevice",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavdevice.xcframework.zip",
-                    checksum: ""
-                ),
-                .target(
-                    name: "Libavformat",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavformat.xcframework.zip",
-                    checksum: ""
-                ),
-                .target(
-                    name: "Libavfilter",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavfilter.xcframework.zip",
-                    checksum: ""
-                ),
-                .target(
-                    name: "Libavutil",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libavutil.xcframework.zip",
-                    checksum: ""
-                ),
-                .target(
-                    name: "Libswresample",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libswresample.xcframework.zip",
-                    checksum: ""
-                ),
-                .target(
-                    name: "Libswscale",
-                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/Libswscale.xcframework.zip",
-                    checksum: ""
-                ),
+                    name: "FFmpeg",
+                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/FFmpeg.xcframework.zip",
+                    checksum: "" // 这里的 checksum 保持空即可，打包脚本会自动填充
+                )
             ]
         case .openssl:
             return  [
