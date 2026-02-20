@@ -26,8 +26,8 @@ do {
     // ffmpeg
     try BuildUavs3d().buildALL()
     try BuildDovi().buildALL()
-    try BuildVulkan().buildALL()
-    try BuildShaderc().buildALL()
+    // try BuildVulkan().buildALL()
+    // try BuildShaderc().buildALL()
     try BuildLittleCms().buildALL()
     try BuildPlacebo().buildALL()
     try BuildDav1d().buildALL()
@@ -564,7 +564,7 @@ private class BuildFFMPEG: BaseBuild {
         //        if platform == .isimulator || platform == .tvsimulator {
         //            arguments.append("--assert-level=1")
         //        }
-        var dependencyLibrary = [Library.gmp, .gnutls, .libfreetype, .libharfbuzz, .libfribidi, .libass, .vulkan, .libshaderc, .lcms2, .libplacebo, .libdav1d, .libuavs3d]
+        var dependencyLibrary = [Library.gmp, .gnutls, .libfreetype, .libharfbuzz, .libfribidi, .libass, .lcms2, .libplacebo, .libdav1d, .libuavs3d]
         if BaseBuild.options.enableGPL {
             dependencyLibrary += [.libsmbclient]
         }
@@ -703,10 +703,6 @@ private class BuildFFMPEG: BaseBuild {
         "--enable-filter=vflip", "--enable-filter=volume",
         "--enable-filter=w3fdif",
         "--enable-filter=yadif",
-        "--enable-filter=avgblur_vulkan", "--enable-filter=blend_vulkan", "--enable-filter=bwdif_vulkan",
-        "--enable-filter=chromaber_vulkan", "--enable-filter=flip_vulkan", "--enable-filter=gblur_vulkan",
-        "--enable-filter=hflip_vulkan", "--enable-filter=nlmeans_vulkan", "--enable-filter=overlay_vulkan",
-        "--enable-filter=vflip_vulkan", "--enable-filter=xfade_vulkan",
     ]
 
 }
