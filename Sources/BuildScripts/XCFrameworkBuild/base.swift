@@ -221,22 +221,35 @@ class BaseBuild {
         var thirdPartyLibsPaths: [String] = []
         let distDir = URL.currentDirectory 
         if let modules = try? FileManager.default.contentsOfDirectory(atPath: distDir.path) {
-            let blacklist = ["vulkan", "libshaderc"] // 👈 新增黑名单列表
+            // 👇 1. 扩充黑名单：加入 MPV 专属库、不需要的加密库以及构建产物文件夹
+            let blacklist = [
+                "vulkan", "libshaderc", "openssl", "libbluray", 
+                "libdovi", "libuchardet", "libluajit", "libmpv", 
+                "release", "lldbinitfile"
+            ] 
+            
             for moduleName in modules {
+                // 2. 排除 FFmpeg 自身
                 if moduleName.lowercased().contains("ffmpeg") { continue }
-                // 👇 新增黑名单：坚决不把 Vulkan 和 Shaderc 的静态库混进 FFmpeg！
-                print("🔍 [Debug] Checking module: \(moduleName) for FFmpeg dependencies...")
+                
+                // 3. 极其关键：排除所有带有 "-" 的源码文件夹 (例如 libass-0.17.4)
+                if moduleName.contains("-") { continue }
+                
+                // 4. 命中黑名单的直接跳过
                 if blacklist.contains(moduleName.lowercased()) { continue }
 
                 let depLibDir = distDir + [moduleName, platform.rawValue, "thin", arch.rawValue, "lib"]
                 if FileManager.default.fileExists(atPath: depLibDir.path) {
+                    // 👇 只有真正存活到这里的，才是我们要合并的底层精华！
+                    print("✅ [Debug] Merging module: \(moduleName) into FFmpeg...")
+                    
                     let depLibs = Utility.listAllFiles(in: depLibDir).filter { $0.path.hasSuffix(".a") }
                     for lib in depLibs {
                         if !thirdPartyLibsPaths.contains(lib.path) { thirdPartyLibsPaths.append(lib.path) }
                     }
                 }
             }
-        }
+        } 
         
         try? FileManager.default.removeItem(at: outputLibPath)
         
