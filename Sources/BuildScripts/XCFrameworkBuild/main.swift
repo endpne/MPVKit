@@ -26,8 +26,8 @@ do {
     // ffmpeg
     try BuildUavs3d().buildALL()
     try BuildDovi().buildALL()
-    // try BuildVulkan().buildALL()
-    // try BuildShaderc().buildALL()
+    try BuildVulkan().buildALL()
+    try BuildShaderc().buildALL()
     try BuildLittleCms().buildALL()
     try BuildPlacebo().buildALL()
     try BuildDav1d().buildALL()
