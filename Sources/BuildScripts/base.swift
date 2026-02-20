@@ -19,7 +19,7 @@ enum Build {
         if !FileManager.default.fileExists(atPath: path.path) {
             try? FileManager.default.createDirectory(at: path, withIntermediateDirectories: false, attributes: nil)
         }
-        try? Utility.removeFiles(extensions: [".swift"], currentDirectoryURL: URL.currentDirectory + ["dist", "release"])
+        try? FileManager.default.removeItem(atPath: (URL.currentDirectory + "dist/release/Package.swift").path)
         FileManager.default.changeCurrentDirectoryPath(path.path)
         BaseBuild.options = options
         if !options.platforms.isEmpty {
@@ -91,7 +91,7 @@ class ArgumentOptions {
 }
 
 class BaseBuild {
-    static let defaultPath = "/Library/Frameworks/Python.framework/Versions/Current/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    static let defaultPath = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     static var platforms = PlatformType.allCases
     static var options = ArgumentOptions()
     static let splitPlatformGroups = [
@@ -117,9 +117,9 @@ class BaseBuild {
 
         // pull code from git
         if pullLatestVersion {
-            try! Utility.launch(path: "/usr/bin/git", arguments: ["-c", "advice.detachedHead=false", "clone", "--recursive", "--depth", "1", library.url, directoryURL.path])
+            try! Utility.launch(path: "/usr/bin/git", arguments: ["-c", "advice.detachedHead=false", "clone", "--depth", "1", library.url, directoryURL.path])
         } else {
-            try! Utility.launch(path: "/usr/bin/git", arguments: ["-c", "advice.detachedHead=false", "clone", "--recursive", "--depth", "1", "--branch", library.version, library.url, directoryURL.path])
+            try! Utility.launch(path: "/usr/bin/git", arguments: ["-c", "advice.detachedHead=false", "clone", "--depth", "1", "--branch", library.version, library.url, directoryURL.path])
         }
 
         // apply patch
@@ -163,7 +163,7 @@ class BaseBuild {
     }
 
     func build(platform: PlatformType, arch: ArchType) throws {
-        let buildURL = scratch(platform: platform, arch: arch)
+        let buildURL: URL = scratch(platform: platform, arch: arch)
         try? FileManager.default.createDirectory(at: buildURL, withIntermediateDirectories: true, attributes: nil)
         let environ = environment(platform: platform, arch: arch)
         if FileManager.default.fileExists(atPath: (directoryURL + "meson.build").path) {
@@ -176,6 +176,7 @@ class BaseBuild {
             
 
             let crossFile = createMesonCrossFile(platform: platform, arch: arch)
+            print("meson cross file: \(crossFile.path)")
             let meson = Utility.shell("which meson", isOutput: true)!
             try Utility.launch(path: meson, arguments: ["setup", buildURL.path, "--cross-file=\(crossFile.path)"] + arguments(platform: platform, arch: arch), currentDirectoryURL: directoryURL, environment: environ)
             try Utility.launch(path: meson, arguments: ["compile", "--clean"], currentDirectoryURL: buildURL, environment: environ)
@@ -196,6 +197,98 @@ class BaseBuild {
         if library == .FFmpeg {
             try mergeFFmpegDynamicLibs(platform: platform, arch: arch)
         }
+    }
+
+    func wafPath() -> String {
+        "./waf"
+    }
+
+    func wafBuildArg() -> [String] {
+        ["build"]
+    }
+
+    func wafInstallArg() -> [String] {
+        []
+    }
+
+    func configure(buildURL: URL, environ: [String: String], platform: PlatformType, arch: ArchType) throws {
+        let autogen = directoryURL + "autogen.sh"
+        if FileManager.default.fileExists(atPath: autogen.path) {
+            var environ = environ
+            environ["NOCONFIGURE"] = "1"
+            try Utility.launch(executableURL: autogen, arguments: [], currentDirectoryURL: directoryURL, environment: environ)
+        }
+        let makeLists = directoryURL + "CMakeLists.txt"
+        if FileManager.default.fileExists(atPath: makeLists.path) {
+            if Utility.shell("which cmake") == nil {
+                Utility.shell("brew install cmake")
+            }
+            let cmake = Utility.shell("which cmake", isOutput: true)!
+            let thinDirPath = thinDir(platform: platform, arch: arch).path
+            var arguments = [
+                makeLists.path,
+                "-DCMAKE_VERBOSE_MAKEFILE=0",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_OSX_SYSROOT=\(platform.sdk.lowercased())",
+                "-DCMAKE_OSX_ARCHITECTURES=\(arch.rawValue)",
+                "-DCMAKE_SYSTEM_NAME=\(platform.cmakeSystemName)",
+                "-DCMAKE_SYSTEM_PROCESSOR=\(arch.rawValue)",
+                "-DCMAKE_INSTALL_PREFIX=\(thinDirPath)",
+                "-DBUILD_SHARED_LIBS=0",
+            ]
+            arguments.append(contentsOf: self.arguments(platform: platform, arch: arch))
+            try Utility.launch(path: cmake, arguments: arguments, currentDirectoryURL: buildURL, environment: environ)
+        } else {
+            let configure = directoryURL + "configure"
+            if !FileManager.default.fileExists(atPath: configure.path) {
+                var bootstrap = directoryURL + "bootstrap"
+                if !FileManager.default.fileExists(atPath: bootstrap.path) {
+                    bootstrap = directoryURL + ".bootstrap"
+                }
+                if FileManager.default.fileExists(atPath: bootstrap.path) {
+                    try Utility.launch(executableURL: bootstrap, arguments: [], currentDirectoryURL: directoryURL, environment: environ)
+                }
+            }
+            var arguments = [
+                "--prefix=\(thinDir(platform: platform, arch: arch).path)",
+            ]
+            arguments.append(contentsOf: self.arguments(platform: platform, arch: arch))
+            try Utility.launch(executableURL: configure, arguments: arguments, currentDirectoryURL: buildURL, environment: environ)
+        }
+    }
+
+    func environment(platform: PlatformType, arch: ArchType) -> [String: String] {
+        let cFlags = cFlags(platform: platform, arch: arch).joined(separator: " ")
+        let ldFlags = ldFlags(platform: platform, arch: arch).joined(separator: " ")
+        let pkgConfigPath = platform.pkgConfigPath(arch: arch)
+        let pkgConfigPathDefault = Utility.shell("pkg-config --variable pc_path pkg-config", isOutput: true)!
+        return [
+            "LC_CTYPE": "C",
+            "CC": "/usr/bin/clang",
+            "CXX": "/usr/bin/clang++",
+            // "SDKROOT": platform.sdk.lowercased(),
+            "CURRENT_ARCH": arch.rawValue,
+            "CFLAGS": cFlags,
+            // makefile can't use CPPFLAGS
+            "CPPFLAGS": cFlags,
+            // 这个要加，不然cmake在编译maccatalyst 会有问题
+            "CXXFLAGS": cFlags,
+            "LDFLAGS": ldFlags,
+            "PKG_CONFIG_LIBDIR": pkgConfigPath + pkgConfigPathDefault,
+            "PATH": BaseBuild.defaultPath,
+        ]
+    }
+
+    func cFlags(platform: PlatformType, arch: ArchType) -> [String] {
+        var cFlags = platform.cFlags(arch: arch)
+        let librarys = flagsDependencelibrarys()
+        for library in librarys {
+            let path = URL.currentDirectory + [library.rawValue, platform.rawValue, "thin", arch.rawValue]
+            if FileManager.default.fileExists(atPath: path.path) {
+                cFlags.append("-I\(path.path)/include")
+            }
+        }
+        return cFlags
     }
 
     func mergeFFmpegDynamicLibs(platform: PlatformType, arch: ArchType) throws {
@@ -356,100 +449,6 @@ class BaseBuild {
         }
     }
 
-    func wafPath() -> String {
-        "./waf"
-    }
-
-    func wafBuildArg() -> [String] {
-        ["build"]
-    }
-
-    func wafInstallArg() -> [String] {
-        []
-    }
-
-    func configure(buildURL: URL, environ: [String: String], platform: PlatformType, arch: ArchType) throws {
-        let autogen = directoryURL + "autogen.sh"
-        if FileManager.default.fileExists(atPath: autogen.path) {
-            var environ = environ
-            environ["NOCONFIGURE"] = "1"
-            try Utility.launch(executableURL: autogen, arguments: [], currentDirectoryURL: directoryURL, environment: environ)
-        }
-        let makeLists = directoryURL + "CMakeLists.txt"
-        if FileManager.default.fileExists(atPath: makeLists.path) {
-            if Utility.shell("which cmake") == nil {
-                Utility.shell("brew install cmake")
-            }
-            let cmake = Utility.shell("which cmake", isOutput: true)!
-            let thinDirPath = thinDir(platform: platform, arch: arch).path
-            var arguments = [
-                makeLists.path,
-                "-DCMAKE_VERBOSE_MAKEFILE=0",
-                "-DCMAKE_BUILD_TYPE=Release",
-                "-DCMAKE_OSX_SYSROOT=\(platform.sdk.lowercased())",
-                "-DCMAKE_OSX_ARCHITECTURES=\(arch.rawValue)",
-                "-DCMAKE_SYSTEM_NAME=\(platform.cmakeSystemName)",
-                "-DCMAKE_SYSTEM_PROCESSOR=\(arch.rawValue)",
-                "-DCMAKE_INSTALL_PREFIX=\(thinDirPath)",
-                "-DBUILD_SHARED_LIBS=0",
-                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
-            ]
-            arguments.append(contentsOf: self.arguments(platform: platform, arch: arch))
-            try Utility.launch(path: cmake, arguments: arguments, currentDirectoryURL: buildURL, environment: environ)
-        } else {
-            let configure = directoryURL + "configure"
-            if !FileManager.default.fileExists(atPath: configure.path) {
-                var bootstrap = directoryURL + "bootstrap"
-                if !FileManager.default.fileExists(atPath: bootstrap.path) {
-                    bootstrap = directoryURL + ".bootstrap"
-                }
-                if FileManager.default.fileExists(atPath: bootstrap.path) {
-                    try Utility.launch(executableURL: bootstrap, arguments: [], currentDirectoryURL: directoryURL, environment: environ)
-                }
-            }
-            var arguments = [
-                "--prefix=\(thinDir(platform: platform, arch: arch).path)",
-            ]
-            arguments.append(contentsOf: self.arguments(platform: platform, arch: arch))
-            try Utility.launch(executableURL: configure, arguments: arguments, currentDirectoryURL: buildURL, environment: environ)
-        }
-    }
-
-    func environment(platform: PlatformType, arch: ArchType) -> [String: String] {
-        let cFlags = cFlags(platform: platform, arch: arch).joined(separator: " ")
-        let ldFlags = ldFlags(platform: platform, arch: arch).joined(separator: " ")
-        let pkgConfigPath = platform.pkgConfigPath(arch: arch)
-        let pkgConfigPathDefault = Utility.shell("pkg-config --variable pc_path pkg-config", isOutput: true)!
-        return [
-            "LC_CTYPE": "C",
-            "CC": "/usr/bin/clang",
-            "CXX": "/usr/bin/clang++",
-            // "SDKROOT": platform.sdk.lowercased(),
-            "CURRENT_ARCH": arch.rawValue,
-            "CFLAGS": cFlags,
-            // makefile can't use CPPFLAGS
-            "CPPFLAGS": cFlags,
-            // 这个要加，不然cmake在编译maccatalyst 会有问题
-            "CXXFLAGS": cFlags,
-            "ASMFLAGS": cFlags,
-            "LDFLAGS": ldFlags,
-            "PKG_CONFIG_LIBDIR": pkgConfigPath + pkgConfigPathDefault,
-            "PATH": BaseBuild.defaultPath,
-        ]
-    }
-
-    func cFlags(platform: PlatformType, arch: ArchType) -> [String] {
-        var cFlags = platform.cFlags(arch: arch)
-        let librarys = flagsDependencelibrarys()
-        for library in librarys {
-            let path = URL.currentDirectory + [library.rawValue, platform.rawValue, "thin", arch.rawValue]
-            if FileManager.default.fileExists(atPath: path.path) {
-                cFlags.append("-I\(path.path)/include")
-            }
-        }
-        return cFlags
-    }
-
     func ldFlags(platform: PlatformType, arch: ArchType) -> [String] {
         var ldFlags = platform.ldFlags(arch: arch)
         let librarys = flagsDependencelibrarys()
@@ -557,7 +556,10 @@ class BaseBuild {
             if !FileManager.default.fileExists(atPath: prefix.path) {
                 return nil
             }
-            let libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") ? framework : "lib" + framework
+            var libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") || framework == "MPVKit" ? framework : "lib" + framework
+            if libname == "MPVKit" {
+                libname = "libmpv"
+            }
             var libPath = prefix + ["lib", "\(libname).a"]
             if !FileManager.default.fileExists(atPath: libPath.path) {
                 libPath = prefix + ["lib", "\(libname).dylib"]
@@ -573,9 +575,27 @@ class BaseBuild {
         arguments.append((frameworkDir + framework).path)
         try Utility.launch(path: "/usr/bin/lipo", arguments: arguments)
         try FileManager.default.createDirectory(at: frameworkDir + "Modules", withIntermediateDirectories: true, attributes: nil)
+        // 👇 新增：为框架生成标准的 Umbrella Header (伞头文件)
+        let umbrellaHeaderPath = frameworkDir.path + "/Headers/\(framework).h"
+        var umbrellaContent = "// Auto-generated Umbrella Header for \(framework)\n"
+        if framework.contains("FFmpeg") {
+            // 将 FFmpeg 的子模块头文件统统包含进来
+            umbrellaContent += """
+            #import <\(framework)/libavcodec/avcodec.h>
+            #import <\(framework)/libavdevice/avdevice.h>
+            #import <\(framework)/libavfilter/avfilter.h>
+            #import <\(framework)/libavformat/avformat.h>
+            #import <\(framework)/libavutil/avutil.h>
+            #import <\(framework)/libswresample/swresample.h>
+            #import <\(framework)/libswscale/swscale.h>
+            """
+        }
+        FileManager.default.createFile(atPath: umbrellaHeaderPath, contents: umbrellaContent.data(using: .utf8), attributes: nil)
+
+        // 👇 修改：更新 modulemap，使用具体的 umbrella header 替代容易迷路的 umbrella "."
         var modulemap = """
         framework module \(framework) [system] {
-            umbrella "."
+            umbrella header "\(framework).h"
 
         """
         frameworkExcludeHeaders(framework).forEach { header in
@@ -586,74 +606,39 @@ class BaseBuild {
         }
         modulemap += """
             export *
+            module * { export * }
         }
         """
         FileManager.default.createFile(atPath: frameworkDir.path + "/Modules/module.modulemap", contents: modulemap.data(using: .utf8), attributes: nil)
-        // Setting the minimum version to 100.0 is required for uploading a static framework to the App Store after Xcode 15.4
-        // Fix: ITMS-90208: "Invalid Bundle. The bundle xxx.framework does not support the minimum OS Version specified in the Info.plist."
-        // It was originally using `platform.minVersion`
-        createPlist(path: frameworkDir.path + "/Info.plist", name: framework, minVersion: "100.0", platform: platform.sdk)
-        try fixShallowBundles(framework: framework, platform: platform, frameworkDir: frameworkDir)
-        if library == .FFmpeg {
+        createPlist(path: frameworkDir.path + "/Info.plist", name: framework, minVersion: platform.minVersion, platform: platform.sdk)
+        if library == .MPVKit || library == .FFmpeg {
             let libPath = (frameworkDir + framework).path
             _ = try? Utility.launch(path: "/usr/bin/install_name_tool", arguments: ["-id", "@rpath/\(framework).framework/\(framework)", libPath])
         }
-        return frameworkDir.path
-    }
 
-    // Fix shallow bundles for Xcode 26, only for macOS frameworks
-    func fixShallowBundles(framework: String, platform: PlatformType, frameworkDir: URL) throws {
-        guard platform == .macos else { return }
-
-        let infoPlistPath = frameworkDir + "Info.plist"
-        let versionsPath = frameworkDir + "Versions"
-        
-        // Check if this is a shallow bundle that needs fixing
-        var isDirectory: ObjCBool = false
-        let frameworkExists = FileManager.default.fileExists(atPath: frameworkDir.path, isDirectory: &isDirectory)
-        let hasInfoPlist = FileManager.default.fileExists(atPath: infoPlistPath.path)
-        let hasVersions = FileManager.default.fileExists(atPath: versionsPath.path, isDirectory: &isDirectory) && isDirectory.boolValue
-        
-        if frameworkExists && hasInfoPlist && !hasVersions {
-            print("Fixing \(framework).framework bundle structure...")
-            
-            // Create proper bundle structure
-            let versionAResourcesPath = frameworkDir + ["Versions", "A", "Resources"]
-            try FileManager.default.createDirectory(at: versionAResourcesPath, withIntermediateDirectories: true, attributes: nil)
-            
-            // Move Info.plist to proper location
-            let newInfoPlistPath = versionAResourcesPath + "Info.plist"
-            try FileManager.default.moveItem(at: infoPlistPath, to: newInfoPlistPath)
-            
-            // Move framework binary to proper location
-            let binaryPath = frameworkDir + framework
-            let newBinaryPath = frameworkDir + ["Versions", "A", framework]
-            if FileManager.default.fileExists(atPath: binaryPath.path) {
-                try FileManager.default.moveItem(at: binaryPath, to: newBinaryPath)
-            }
-            
-            // Move LICENSE if exists
-            let licensePath = frameworkDir + "LICENSE"
-            if FileManager.default.fileExists(atPath: licensePath.path) {
-                let newLicensePath = frameworkDir + ["Versions", "A", "LICENSE"]
-                try FileManager.default.moveItem(at: licensePath, to: newLicensePath)
-            }
-            
+        if platform == .macos {
+            // Create `Resources`、 `Versions` directory for macOS framework
+            try? FileManager.default.createDirectory(at: frameworkDir + "Versions", withIntermediateDirectories: true, attributes: nil)
+            try? FileManager.default.createDirectory(at: frameworkDir + "Versions/A", withIntermediateDirectories: true, attributes: nil)
+            try? FileManager.default.createDirectory(at: frameworkDir + "Versions/A/Resources", withIntermediateDirectories: true, attributes: nil)
+            // Move `Info.plist`、`Headers`、`Modules` to `Versions/A/`
+            try? FileManager.default.moveItem(at: frameworkDir + framework, to: frameworkDir + "Versions/A/\(framework)")
+            try? FileManager.default.moveItem(at: frameworkDir + "Info.plist", to: frameworkDir + "Versions/A/Resources/Info.plist")
+            try? FileManager.default.moveItem(at: frameworkDir + "Headers", to: frameworkDir + "Versions/A/Headers")
+            try? FileManager.default.moveItem(at: frameworkDir + "Modules", to: frameworkDir + "Versions/A/Modules")
             // Create symbolic links
-            let currentLinkPath = frameworkDir + ["Versions", "Current"]
-            try? FileManager.default.removeItem(at: currentLinkPath)
-            try FileManager.default.createSymbolicLink(atPath: currentLinkPath.path, withDestinationPath: "A")
-            
-            let binaryLinkPath = frameworkDir + framework
-            try? FileManager.default.removeItem(at: binaryLinkPath)
-            try FileManager.default.createSymbolicLink(atPath: binaryLinkPath.path, withDestinationPath: "Versions/Current/\(framework)")
-            
-            let resourcesLinkPath = frameworkDir + "Resources"
-            try? FileManager.default.removeItem(at: resourcesLinkPath)
-            try FileManager.default.createSymbolicLink(atPath: resourcesLinkPath.path, withDestinationPath: "Versions/Current/Resources")
-            
-            print("\(framework).framework structure fixed")
+            print("Creating symbolic links for macOS framework...")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Versions/Current", withDestinationPath: "A")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Headers", withDestinationPath: "Versions/Current/Headers")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Modules", withDestinationPath: "Versions/Current/Modules")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/Resources", withDestinationPath: "Versions/Current/Resources")
+            try? FileManager.default.createSymbolicLink(atPath: frameworkDir.path + "/\(framework)", withDestinationPath: "Versions/Current/\(framework)")
         }
+
+        // 👇 终极护航：给框架打上基础的 Ad-Hoc 签名，彻底解决 Xcode 签名报错！
+        print("✍️ [Debug] 给 \(framework) 添加本地 Ad-Hoc 签名...")
+        _ = try? Utility.launch(path: "/usr/bin/codesign", arguments: ["--force", "--sign", "-", "--timestamp=none", frameworkDir.path])
+        return frameworkDir.path
     }
 
     func thinDir(library: Library, platform: PlatformType, arch: ArchType) -> URL {
@@ -711,7 +696,7 @@ class BaseBuild {
         FileManager.default.createFile(atPath: path, contents: content.data(using: .utf8), attributes: nil)
     }
 
-    // CFBundleIdentifier must contain only alphanumerics(a-z), dots(.), hyphens(-) 
+    // CFBundleIdentifier must contain only alphanumerics, dots, hyphens 
     private func normalizeBundleIdentifier(_ identifier: String) -> String {
         return identifier.replacingOccurrences(of: "_", with: "-")
     }
@@ -720,6 +705,10 @@ class BaseBuild {
     private func createMesonCrossFile(platform: PlatformType, arch: ArchType) -> URL {
         let url = scratch(platform: platform, arch: arch)
         let crossFile = url + "crossFile.meson"
+        var libType = "static"
+        if library == .MPVKit || library == .FFmpeg {
+            libType = "shared"
+        }
         let prefix = thinDir(platform: platform, arch: arch)
         let cFlags = cFlags(platform: platform, arch: arch).map {
             "'" + $0 + "'"
@@ -750,7 +739,7 @@ class BaseBuild {
         endian = 'little'
 
         [built-in options]
-        default_library = 'static'
+        default_library = '\(libType)'
         buildtype = 'release'
         prefix = '\(prefix.path)'
         c_args = [\(cFlags)]
@@ -809,7 +798,7 @@ class BaseBuild {
             let sourceLib = releaseDirPath + [library.rawValue]
             let destZipLibPath = releaseDirPath + [library.rawValue + "-all.zip"]
             try? FileManager.default.removeItem(at: destZipLibPath)
-            try Utility.launch(path: "/usr/bin/zip", arguments: ["-qr", destZipLibPath.path, "./"], currentDirectoryURL: sourceLib)
+            try Utility.launch(path: "/usr/bin/zip", arguments: ["-qry", destZipLibPath.path, "./"], currentDirectoryURL: sourceLib)
         }
 
         // zip xcframeworks
@@ -823,9 +812,9 @@ class BaseBuild {
             }
         }
         for framework in frameworks {
-            // clean old zip files
-            try? FileManager.default.removeItem(at: releaseDirPath + [framework + ".xcframework.zip"])
-            try? FileManager.default.removeItem(at: releaseDirPath + [framework + ".xcframework.checksum.txt"])
+            // clean old files
+            try Utility.launch(path: "/bin/rm", arguments: ["-rf", "\(framework)*.xcframework.zip"], currentDirectoryURL: releaseDirPath)
+            try Utility.launch(path: "/bin/rm", arguments: ["-rf", "\(framework)*.checksum.txt"], currentDirectoryURL: releaseDirPath)
 
             let XCFrameworkFile =  framework + ".xcframework"
             let zipFile = releaseDirPath + [framework + ".xcframework.zip"]
@@ -836,11 +825,6 @@ class BaseBuild {
             if BaseBuild.options.enableSplitPlatform {
                 for group in BaseBuild.splitPlatformGroups.keys {
                     let XCFrameworkName =  "\(framework)-\(group)"
-                    
-                    // clean old zip files
-                    try? FileManager.default.removeItem(at: releaseDirPath + [XCFrameworkName + ".xcframework.zip"])
-                    try? FileManager.default.removeItem(at: releaseDirPath + [XCFrameworkName + ".xcframework.checksum.txt"])
-                    
                     let XCFrameworkFile =  XCFrameworkName + ".xcframework"
                     let XCFrameworkPath = self.xcframeworkDirectoryURL + ["\(framework)-\(group).xcframework"]
                     if FileManager.default.fileExists(atPath: XCFrameworkPath.path) {
@@ -912,6 +896,9 @@ class BaseBuild {
         } else {
             for target in library.targets {
                 let checksumFile = releaseDirPath + [target.name + ".xcframework.checksum.txt"]
+                if !FileManager.default.fileExists(atPath: checksumFile.path) {
+                    continue
+                }
                 let checksum = try String(contentsOf: checksumFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
                 dependencyTargetContent += """
 
@@ -955,111 +942,6 @@ class BaseBuild {
     }
 }
 
-class CombineBaseBuild : BaseBuild {
-
-    func combineFrameworkName() -> String {
-        "\(library.rawValue)-combined.a"
-    }
-
-    func combineFrameworks(platform: PlatformType, arch: ArchType) -> [String] {
-        let thinLibPath = thinDir(platform: platform, arch: arch) + ["lib"]
-        let staticLibraries = try? FileManager.default.contentsOfDirectory(atPath: thinLibPath.path).filter { $0.hasSuffix(".a") } 
-        guard let staticLibraries = staticLibraries else {
-            return []
-        }
-        // order by create date descending
-        let sortedFrameworks = staticLibraries.sorted {
-            let file1Path = thinLibPath + [$0]
-            let file2Path = thinLibPath + [$1]
-            let attr1 = try? FileManager.default.attributesOfItem(atPath: file1Path.path)
-            let attr2 = try? FileManager.default.attributesOfItem(atPath: file2Path.path)
-            let date1 = attr1?[FileAttributeKey.creationDate] as? Date ?? Date.distantPast
-            let date2 = attr2?[FileAttributeKey.creationDate] as? Date ?? Date.distantPast
-            return date1 < date2
-        }
-        return sortedFrameworks
-    }
-
-    override func frameworks() throws -> [String] {
-        ["\(library.rawValue)-combined"]
-    }
-
-    override func build(platform: PlatformType, arch: ArchType) throws {
-        try super.build(platform: platform, arch: arch)
-
-        try combineStaticLibraries(platform: platform, arch: arch)
-    }
-
-    func combineStaticLibraries(platform: PlatformType, arch: ArchType) throws {
-        let frameworks = self.combineFrameworks(platform: platform, arch: arch)
-        if frameworks.isEmpty {
-            return
-        }
-
-        print("Create combine static libraries...")
-        let thinLibPath = thinDir(platform: platform, arch: arch) + ["lib"]
-        var combinedLibName = combineFrameworkName()
-        if !combinedLibName.hasSuffix(".a") {
-            combinedLibName += ".a"
-        }
-        var paths: [String] = []
-        let prefix = thinDir(platform: platform, arch: arch)
-        if !FileManager.default.fileExists(atPath: prefix.path) {
-            throw NSError(domain: "no build for \(platform.rawValue) \(arch.rawValue)", code: 1)
-        }
-        for framework in frameworks {
-                let libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") ? framework : "lib" + framework
-                let libPath = prefix + ["lib", libname]
-                if !FileManager.default.fileExists(atPath: libPath.path) {
-                    throw NSError(domain: "no library \(libPath.path) for \(platform.rawValue) \(arch.rawValue)", code: 1)
-                }
-                paths.append(libPath.path)
-        }
-
-        let outputPath = prefix + ["lib", combinedLibName]
-        var arguments = ["-static"]
-        arguments.append(contentsOf: ["-o", outputPath.path])
-        for frameworkPath in paths {
-            arguments.append(frameworkPath)
-        }
-        if FileManager.default.fileExists(atPath: outputPath.path) {
-            try? FileManager.default.removeItem(at: outputPath)
-        }
-        try Utility.launch(path: "/usr/bin/libtool", arguments: arguments)
-
-        // move old static libraries to origin directory
-        let backupDirectory = thinLibPath + ["bak"]
-        try? FileManager.default.createDirectory(at: backupDirectory, withIntermediateDirectories: true, attributes: nil)
-        for framework in frameworks {
-            let libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") ? framework : "lib" + framework
-            let libPath = prefix + ["lib", libname]
-            let backupLibPath = backupDirectory + [libname]
-            try? FileManager.default.moveItem(at: libPath, to: backupLibPath)
-        }
-
-        // create combine pkgconfig
-        let pkgconfigPath = thinLibPath + ["pkgconfig", "\(library.rawValue).pc"]
-        if !FileManager.default.fileExists(atPath: pkgconfigPath.path) {
-            throw NSError(domain: "no pkgconfig \(pkgconfigPath.path) for \(platform.rawValue) \(arch.rawValue)", code: 1)
-        }
-
-        var content = try String(contentsOf: pkgconfigPath)
-        let combinedLibname = combinedLibName.hasPrefix("lib") ? String(combinedLibName.dropFirst(3).dropLast(2)) : String(combinedLibName.dropLast(2))
-        content = content.replacingOccurrences(
-            of: "-L\\$\\{libdir\\}((\\s+-l\\S+)+)",
-            with: "-L${libdir} -l\(combinedLibname)",
-            options: .regularExpression
-        )
-
-        // move old pkgconfig to origin directory
-        let backupPkgconfigPath = backupDirectory + [pkgconfigPath.lastPathComponent]
-        try? FileManager.default.moveItem(at: pkgconfigPath, to: backupPkgconfigPath)
-
-        // replace with combined pkgconfig
-        FileManager.default.createFile(atPath: pkgconfigPath.path, contents: content.data(using: .utf8), attributes: nil)
-    }
-
-}
 
 class ZipBaseBuild : BaseBuild {
 
@@ -1075,8 +957,14 @@ class ZipBaseBuild : BaseBuild {
         try! FileManager.default.createDirectory(atPath: directoryURL.path, withIntermediateDirectories: true, attributes: nil)
 
         if !FileManager.default.fileExists(atPath: outputFile.path) {
-            try! Utility.launch(path: "wget", arguments: ["-O", outputFileName, library.url], currentDirectoryURL: directoryURL)
-            try! Utility.launch(path: "/usr/bin/unzip", arguments: ["-o",outputFileName], currentDirectoryURL: directoryURL)
+            do {
+                print("Downloading \(library.rawValue)...")
+                try Utility.launch(path: "wget", arguments: ["-O", outputFileName, library.url], currentDirectoryURL: directoryURL)
+                try Utility.launch(path: "/usr/bin/unzip", arguments: ["-o",outputFileName], currentDirectoryURL: directoryURL)
+            } catch {
+                print("Download \(library.rawValue) failed")
+                throw error
+            }
         }
     }
 
@@ -1150,9 +1038,9 @@ enum PlatformType: String, CaseIterable {
     var minVersion: String {
         switch self {
         case .ios, .isimulator:
-            return "14.0"
+            return "13.0"
         case .tvos, .tvsimulator:
-            return "14.0"
+            return "13.0"
         case .macos:
             return "11.0"
         case .maccatalyst:
@@ -1202,13 +1090,13 @@ enum PlatformType: String, CaseIterable {
         }
     }
 
-    // xcodebuild default ARCHS = "$(ARCHS_STANDARD_64_BIT)" only build arm64e for tvos
+
     var architectures: [ArchType] {
         switch self {
         case .ios, .xros:
             return [.arm64]
         case .tvos:
-            return [.arm64, .arm64e]
+            return [.arm64]
         case .xrsimulator:
             return [.arm64]
         case .isimulator, .tvsimulator:
@@ -1441,6 +1329,11 @@ enum Utility {
         }
         if !environment.keys.contains("PATH") {
             environment["PATH"] = BaseBuild.defaultPath
+
+            // meson need to use pip version on GITHUB ACTION, use brew version will build failed
+            if ProcessInfo.processInfo.environment.keys.contains("GITHUB_ACTION") {
+                environment["PATH"] = "/Library/Frameworks/Python.framework/Versions/Current/bin:" + environment["PATH"]!
+            }
         }
         task.environment = environment
 
@@ -1520,20 +1413,6 @@ enum Utility {
             if let logURL = logURL {
                 // print log when run in GitHub Action
                 if ProcessInfo.processInfo.environment.keys.contains("GITHUB_ACTION") {
-                    // if build FFmpeg failed, print the ffbuild/config.log content
-                    if logURL.path.contains("FFmpeg") {
-                        let ffbuildLogURL = logURL
-                            .deletingPathExtension()
-                            .appendingPathComponent("ffbuild/config.log")
-                        if FileManager.default.fileExists(atPath: ffbuildLogURL.path) {
-                            if let content = String(data: try Data(contentsOf: ffbuildLogURL), encoding: .utf8) {
-                                print("############# \(ffbuildLogURL) CONTENT BEGIN #############")
-                                print(content)
-                                print("#############  \(ffbuildLogURL) CONTENT END #############")
-                            }
-                        }
-                    }
-
                     if let content = String(data: try Data(contentsOf: logURL), encoding: .utf8) {
                         print("############# \(logURL) CONTENT BEGIN #############")
                         print(content)
