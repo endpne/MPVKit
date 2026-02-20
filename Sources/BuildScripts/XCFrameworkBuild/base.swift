@@ -221,8 +221,13 @@ class BaseBuild {
         var thirdPartyLibsPaths: [String] = []
         let distDir = URL.currentDirectory 
         if let modules = try? FileManager.default.contentsOfDirectory(atPath: distDir.path) {
+            let blacklist = ["vulkan", "libshaderc"] // 👈 新增黑名单列表
             for moduleName in modules {
                 if moduleName.lowercased().contains("ffmpeg") { continue }
+                // 👇 新增黑名单：坚决不把 Vulkan 和 Shaderc 的静态库混进 FFmpeg！
+                print("🔍 [Debug] Checking module: \(moduleName) for FFmpeg dependencies...")
+                if blacklist.contains(moduleName.lowercased()) { continue }
+
                 let depLibDir = distDir + [moduleName, platform.rawValue, "thin", arch.rawValue, "lib"]
                 if FileManager.default.fileExists(atPath: depLibDir.path) {
                     let depLibs = Utility.listAllFiles(in: depLibDir).filter { $0.path.hasSuffix(".a") }
