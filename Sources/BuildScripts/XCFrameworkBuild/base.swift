@@ -225,7 +225,7 @@ class BaseBuild {
             let blacklist = [
                 "vulkan", "libshaderc", "openssl", "libbluray", 
                 "libdovi", "libuchardet", "libluajit", "libmpv", 
-                "release", "lldbinitfile"
+                "release", "lldbinitfile", "libplacebo"
             ] 
             
             for moduleName in modules {

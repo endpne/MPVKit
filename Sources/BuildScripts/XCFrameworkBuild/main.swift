@@ -564,7 +564,7 @@ private class BuildFFMPEG: BaseBuild {
         //        if platform == .isimulator || platform == .tvsimulator {
         //            arguments.append("--assert-level=1")
         //        }
-        var dependencyLibrary = [Library.gmp, .gnutls, .libfreetype, .libharfbuzz, .libfribidi, .libass, .lcms2, .libplacebo, .libdav1d, .libuavs3d]
+        var dependencyLibrary = [Library.gmp, .gnutls, .libfreetype, .libharfbuzz, .libfribidi, .libass, .lcms2, .libdav1d, .libuavs3d]
         if BaseBuild.options.enableGPL {
             dependencyLibrary += [.libsmbclient]
         }
