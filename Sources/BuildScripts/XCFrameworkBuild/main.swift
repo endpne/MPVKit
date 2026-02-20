@@ -511,23 +511,7 @@ private class BuildFFMPEG: BaseBuild {
     }
 
     override func frameworks() throws -> [String] {
-        var frameworks: [String] = []
-        if let platform = platforms().first {
-            if let arch = platform.architectures.first {
-                let lib = thinDir(platform: platform, arch: arch) + "lib"
-                let fileNames = try FileManager.default.contentsOfDirectory(atPath: lib.path)
-                for fileName in fileNames {
-                    if fileName.hasPrefix("lib"), fileName.hasSuffix(".a") {
-                        // 因为其他库也可能引入libavformat,所以把lib改成大写，这样就可以排在前面，覆盖别的库。
-                        frameworks.append("Lib" + fileName.dropFirst(3).dropLast(2))
-                    }
-                }
-            }
-        }
-        if (frameworks.isEmpty) {
-            return [self.library.rawValue]
-        }
-        return frameworks
+        return [ self.library.rawValue ]
     }
 
     override func build(platform: PlatformType, arch: ArchType) throws {
