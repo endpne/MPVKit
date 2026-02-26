@@ -147,7 +147,15 @@ enum Library: String, CaseIterable {
     // for generate Package.swift
     var targets : [PackageTarget] {
         switch self {
-        case .libmpv, .MPVKit:
+        case .MPVKit:
+            return [
+                .target(
+                    name: "MPVKit",
+                    url: "https://github.com/mpvkit/MPVKit/releases/download/\(BaseBuild.options.releaseVersion)/MPVKit.xcframework.zip",
+                    checksum: ""
+                ),
+            ]
+        case .libmpv:
             return [
                 .target(
                     name: "Libmpv",
