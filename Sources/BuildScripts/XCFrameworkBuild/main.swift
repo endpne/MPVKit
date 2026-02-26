@@ -147,7 +147,7 @@ enum Library: String, CaseIterable {
     // for generate Package.swift
     var targets : [PackageTarget] {
         switch self {
-        case .libmpv:
+        case .libmpv, .MPVKit:
             return [
                 .target(
                     name: "Libmpv",
