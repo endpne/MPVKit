@@ -553,6 +553,7 @@ class BaseBuild {
     private func createMesonCrossFile(platform: PlatformType, arch: ArchType) -> URL {
         let url = scratch(platform: platform, arch: arch)
         let crossFile = url + "crossFile.meson"
+        let libType = library == .MPVKit ? "shared" : "static"
         let prefix = thinDir(platform: platform, arch: arch)
         let cFlags = cFlags(platform: platform, arch: arch).map {
             "'" + $0 + "'"
@@ -583,7 +584,7 @@ class BaseBuild {
         endian = 'little'
 
         [built-in options]
-        default_library = 'static'
+        default_library = '\(libType)'
         buildtype = 'release'
         prefix = '\(prefix.path)'
         c_args = [\(cFlags)]
