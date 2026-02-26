@@ -394,7 +394,10 @@ class BaseBuild {
             if !FileManager.default.fileExists(atPath: prefix.path) {
                 return nil
             }
-            let libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") ? framework : "lib" + framework
+            var libname = framework.hasPrefix("lib") || framework.hasPrefix("Lib") ? framework : "lib" + framework
+            if libname == "libMPVKit" {
+                libname = "libmpv"
+            }
             var libPath = prefix + ["lib", "\(libname).a"]
             if !FileManager.default.fileExists(atPath: libPath.path) {
                 libPath = prefix + ["lib", "\(libname).dylib"]
