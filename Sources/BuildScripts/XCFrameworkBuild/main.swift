@@ -522,6 +522,26 @@ private class BuildMPVKit: BaseBuild {
         return array
     }
 
+    override func ldFlags(platform: PlatformType, arch: ArchType) -> [String] {
+        var ldFlags = super.ldFlags(platform: platform, arch: arch)
+        let exportSymbols = directoryURL + "\(library.rawValue).exports"
+        if FileManager.default.fileExists(atPath: exportSymbols.path) {
+            print("link with -exported_symbols_list \(exportSymbols.path)")
+        } else {
+            // create empty file
+            let content = """
+            _mpv_*
+            _libmpv_*
+            _OBJC_CLASS_*
+            """.data(using: .utf8)
+            FileManager.default.createFile(atPath: exportSymbols.path, contents: content, attributes: nil)
+            print("link with -exported_symbols_list \(exportSymbols.path) (empty file created)")
+        }
+        ldFlags.append("-Wl,-exported_symbols_list")
+        ldFlags.append(exportSymbols.path)
+        ldFlags.append("-Wl,-x")
+        return ldFlags
+    }
 }
 
 
