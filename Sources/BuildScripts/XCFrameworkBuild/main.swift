@@ -542,6 +542,16 @@ private class BuildMPVKit: BaseBuild {
         ldFlags.append("-Wl,-x")
         return ldFlags
     }
+
+    override func createFramework(framework: String, platform: PlatformType) throws -> String? {
+        let frameworkDir = try super.createFramework(framework: framework, platform: platform)
+        if let frameworkDir = frameworkDir {
+            let dirPath = frameworkDir.hasSuffix("/") ? frameworkDir : frameworkDir + "/"
+            let libPath = dirPath + framework
+            _ = try? Utility.launch(path: "/usr/bin/install_name_tool", arguments: ["-id", "@rpath/\(framework).framework/\(framework)", libPath])
+        }
+        return frameworkDir
+    }
 }
 
 
