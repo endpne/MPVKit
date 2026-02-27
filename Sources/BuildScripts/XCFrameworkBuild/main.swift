@@ -558,6 +558,7 @@ private class BuildMPVKit: BaseBuild {
         ldFlags.append("-Wl,-exported_symbols_list")
         ldFlags.append(exportSymbols.path)
         ldFlags.append("-Wl,-x")
+        ldFlags.append("-Wl,-ld_classic")
         return ldFlags
     }
 
