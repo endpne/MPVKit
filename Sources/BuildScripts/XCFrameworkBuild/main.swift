@@ -474,6 +474,8 @@ private class BuildMPVKit: BaseBuild {
             "-Dvulkan=enabled",
             "-Dmoltenvk=enabled",  // from patch option
             "-Dmetal=enabled",
+            "-Dshaderc=enabled",
+            "-Dspirv-cross=enabled",
 
             "-Djavascript=disabled",
             "-Dzimg=disabled",
