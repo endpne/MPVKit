@@ -4,6 +4,9 @@ do {
     let options = try ArgumentOptions.parse(CommandLine.arguments)
     try Build.performCommand(options)
 
+    // spirv-cross
+    try BuildSpirvCross().buildALL()
+
     // SSL
     try BuildOpenSSL().buildALL()
     try BuildGmp().buildALL()
@@ -45,7 +48,7 @@ do {
 
 
 enum Library: String, CaseIterable {
-    case MPVKit, libmpv, FFmpeg, libshaderc, vulkan, lcms2, libdovi, openssl, libunibreak, libfreetype, libfribidi, libharfbuzz, libass, libsmbclient, libplacebo, libdav1d, gmp, nettle, gnutls, libuchardet, libbluray, libluajit, libuavs3d
+    case MPVKit, libmpv, FFmpeg, libshaderc, vulkan, lcms2, libdovi, openssl, libunibreak, libfreetype, libfribidi, libharfbuzz, libass, libsmbclient, libplacebo, libdav1d, gmp, nettle, gnutls, libuchardet, libbluray, libluajit, libuavs3d, libspirv_cross
     var version: String {
         switch self {
         case .libmpv, .MPVKit:
@@ -92,6 +95,8 @@ enum Library: String, CaseIterable {
             return "2.1.0-xcode"
         case .libuavs3d:
             return "1.2.1-xcode"
+        case .libspirv_cross:
+            return "1.4.309"
         }
     }
 
@@ -141,6 +146,8 @@ enum Library: String, CaseIterable {
             return "https://github.com/mpvkit/libluajit-build/releases/download/\(self.version)/libluajit-all.zip"
         case .libuavs3d:
             return "https://github.com/mpvkit/libuavs3d-build/releases/download/\(self.version)/libuavs3d-all.zip"
+        case .libspirv_cross:
+            return "https://github.com/endpne/libspirv-cross-build/releases/download/\(self.version)/libspirv_cross-all.zip"
         }
     }
 
@@ -369,6 +376,14 @@ enum Library: String, CaseIterable {
                     name: "Libuavs3d",
                     url: "https://github.com/mpvkit/libuavs3d-build/releases/download/\(self.version)/Libuavs3d.xcframework.zip",
                     checksum: "https://github.com/mpvkit/libuavs3d-build/releases/download/\(self.version)/Libuavs3d.xcframework.checksum.txt"
+                ),
+            ]
+        case .libspirv_cross:
+            return [
+                .target(
+                    name: "Libspirv_cross",
+                    url: "https://github.com/endpne/libspirv-cross-build/releases/download/\(self.version)/Libspirv_cross.xcframework.zip",
+                    checksum: "https://github.com/endpne/libspirv-cross-build/releases/download/\(self.version)/Libspirv_cross.xcframework.checksum.txt"
                 ),
             ]
         }
@@ -1040,5 +1055,11 @@ private class BuildVulkan: ZipBaseBuild {
         }
 
         try super.afterBuild()
+    }
+}
+
+private class BuildSpirvCross: ZipBaseBuild {
+    init() {
+        super.init(library: .libspirv_cross)
     }
 }
