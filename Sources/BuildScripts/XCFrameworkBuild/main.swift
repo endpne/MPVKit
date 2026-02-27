@@ -473,6 +473,7 @@ private class BuildMPVKit: BaseBuild {
             "-Duchardet=enabled",
             "-Dvulkan=enabled",
             "-Dmoltenvk=enabled",  // from patch option
+            "-Dmetal=enabled",
 
             "-Djavascript=disabled",
             "-Dzimg=disabled",
